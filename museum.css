@@ -79,16 +79,39 @@ body[data-theme=art].grid-mode .gallery-area{background:linear-gradient(135deg,#
 body[data-theme=art] .welcome{background-image:linear-gradient(90deg,#513753bd,#d9aabb33),url('museum-entry.png')}
 .theme-swatch.art{background:linear-gradient(110deg,#f4d0d7 0 45%,#f9efd9 45% 55%,#cbded6 55%);position:relative}.theme-swatch.art img{opacity:.3;filter:brightness(1.8) saturate(.2)}
 
-body[data-theme=simple]{--wall:#f5f6f6;--surface:#fff;--ink:#23282b;--muted:#767d80;--accent:#252d31;--frame:#33383c;--line:#e0e4e5}
-body[data-theme=simple] .museum-bay::before{background:radial-gradient(ellipse at 50% 15%,#fff 0,#fff0 65%),linear-gradient(to bottom,#dfe3e6 0 2%,#fafafa 2% 95%,#afb5b8 95% 96%,#eef0f1 96%)}
-body[data-theme=simple] .museum-ceiling{background:repeating-linear-gradient(0deg,transparent 0 140px,#fff 140px 168px,transparent 168px 640px),linear-gradient(90deg,#d9dde0 0 5%,#f2f4f5 5% 95%,#d9dde0 95%);box-shadow:inset 0 0 30px #aeb3b54d}
-body[data-theme=simple] .museum-floor{background:repeating-linear-gradient(90deg,#0000 0 497px,#bdc3c64d 498px 500px),repeating-linear-gradient(0deg,#e5e7e8 0 497px,#c8cccf 498px 500px);filter:none}
-body[data-theme=simple] .museum-door-wall{background-image:linear-gradient(#ffffffba,#ffffffba),url('museum-door.png');background-blend-mode:screen;filter:grayscale(1)}
-body[data-theme=simple] .wall-painting,body[data-theme=simple].grid-mode .frame{background:#fff;box-shadow:inset 0 0 0 5px #353b3e,4px 7px 15px #0002!important;border-radius:0!important}
-body[data-theme=simple] .wall-caption{font-family:system-ui,sans-serif;color:#4f5558;letter-spacing:.04em}
-body[data-theme=simple] .gallery-heading,body[data-theme=simple] .teacher-toolbar,body[data-theme=simple].grid-mode .gallery-area{background:#fff}
-body[data-theme=simple] .welcome{background-image:linear-gradient(90deg,#1e262be8,#e8edef33),url('museum-entry.png')}
-.theme-swatch.simple{background:#fff;border:1px solid #ddd;position:relative}.theme-swatch.simple img{opacity:.18;filter:grayscale(1) brightness(1.5)}.theme-swatch.simple::after{content:'';position:absolute;left:30%;top:18%;width:38%;height:60%;background:#fff;border:3px solid #30373b;box-shadow:4px 4px 0 #dde1e3}
+body[data-theme=simple],body[data-theme=simple].inside-museum{--wall:#f8f9fa;--surface:#fff;--ink:#18181b;--muted:#64748b;--accent:#09090b;--frame:#18181b;--line:#e2e8f0;background:#f8fafc}
+body[data-theme=simple] .museum-bay::before{background:radial-gradient(ellipse at 50% 12%,#ffffff 0%,#ffffff99 35%,transparent 70%),linear-gradient(to bottom,#edf0f2 0%,#f8f9fa 6%,#f8f9fa 93%,#e2e8f0 93% 94%,#27272a 94% 100%);box-shadow:inset 0 0 40px rgba(0,0,0,0.03)}
+body[data-theme=simple] .museum-ceiling{background:linear-gradient(90deg,#272a2d 0 3px,#eef1f3 3px 18%,#272a2d 18% 19%,#f4f6f8 19% 81%,#272a2d 81% 82%,#eef1f3 82% 97%,#272a2d 97% 100%);box-shadow:inset 0 0 50px rgba(0,0,0,0.06)}
+body[data-theme=simple] .museum-floor{background:radial-gradient(ellipse at 50% 15%,rgba(255,255,255,0.6) 0%,transparent 60%),linear-gradient(90deg,#d4d8db 0%,#e4e8ea 50%,#d4d8db 100%);filter:none}
+body[data-theme=simple] .museum-door-wall{background:radial-gradient(ellipse at 50% 20%,#fff 0%,#f8f9fa 60%),linear-gradient(to bottom,#edf0f2 0%,#f8f9fa 6%,#f8f9fa 93%,#e2e8f0 93% 94%,#27272a 94% 100%)}
+body[data-theme=simple] .museum-door{width:28%;height:78%;top:16%;left:36%;background:linear-gradient(135deg,rgba(255,255,255,0.7) 0%,rgba(240,244,248,0.4) 100%);border:2px solid #27272a;box-shadow:0 10px 30px rgba(0,0,0,0.12),inset 0 0 0 1px rgba(255,255,255,0.8);border-radius:4px;display:flex;justify-content:center;align-items:start}
+body[data-theme=simple] .museum-door::before{content:'';position:absolute;top:8%;bottom:8%;left:50%;width:2px;background:#27272a}
+body[data-theme=simple] .museum-door:hover:not(:disabled){background:linear-gradient(135deg,rgba(255,255,255,0.9) 0%,rgba(240,244,248,0.6) 100%)}
+body[data-theme=simple] .museum-door span{background:#18181b;color:#fff;border:1px solid #3f3f46;border-radius:20px;font-family:system-ui,-apple-system,sans-serif;font-size:13px;font-weight:600;letter-spacing:.05em;padding:8px 18px;margin-top:24px;box-shadow:0 2px 10px rgba(0,0,0,0.25)}
+body[data-theme=simple] .wall-painting,body[data-theme=simple].grid-mode .frame{background:#fff;box-shadow:0 12px 30px rgba(0,0,0,0.18),inset 0 0 0 4px #18181b!important;border:1px solid #3f3f46!important;border-radius:2px!important;padding:24px}
+body[data-theme=simple] .wall-painting img,body[data-theme=simple].grid-mode .frame img{background:#fff}
+body[data-theme=simple] .wall-empty,body[data-theme=simple] .grid-mode .empty-mark,body[data-theme=simple] .grid-mode .frame.empty .empty-mark{background:#f8fafc!important;color:#94a3b8!important;font-family:system-ui,-apple-system,sans-serif!important;font-weight:600!important}
+body[data-theme=simple] .wall-caption{font-family:system-ui,-apple-system,sans-serif;color:#334155;font-weight:600;letter-spacing:.04em}
+body[data-theme=simple] .gallery-heading,body[data-theme=simple] .teacher-toolbar{background:#fff;border-color:#e2e8f0}
+body[data-theme=simple] .gallery-heading h1{font-family:system-ui,-apple-system,sans-serif;font-weight:700;color:#0f172a}
+body[data-theme=simple] .room-label,body[data-theme=simple] .room-top button,body[data-theme=simple] .room-actions select{background:#ffffffea;border:1px solid #cbd5e1;color:#1e293b;border-radius:4px}
+body[data-theme=simple] .room-actions #exitRoomBtn{background:#18181b;color:#fff;border-color:#18181b}
+body[data-theme=simple] .tour-controls{background:#ffffffea;border:1px solid #cbd5e1;box-shadow:0 4px 16px rgba(0,0,0,0.08);border-radius:6px}
+body[data-theme=simple] .tour-controls button{color:#1e293b}
+body[data-theme=simple] .tour-controls .tour-main{background:#18181b;color:#fff}
+body[data-theme=simple] .walk-pad button{background:#ffffffea;border-color:#cbd5e1;color:#1e293b;border-radius:4px}
+body[data-theme=simple] .view-controls button{color:#334155}
+body[data-theme=simple] .view-controls button[aria-pressed=true]{border-color:#09090b;background:#18181b;color:#fff}
+body[data-theme=simple] .empty-mark{font-family:system-ui,-apple-system,sans-serif!important;color:#64748b!important;font-weight:600!important;font-size:1.8rem!important;opacity:.85}
+body[data-theme=simple] .unassigned-wall::before{background:#f8f9fa;content:'';position:absolute;inset:0}
+body[data-theme=simple] .view-controls #captureViewBtn,body[data-theme=simple] #shootBtn{background:#18181b;border-color:#18181b;color:#fff}
+body[data-theme=simple] .camera-panel #manualBtn{background:#18181b;border-color:#18181b;color:#fff}
+body[data-theme=simple].grid-mode .gallery-area{background:#f8fafc;border-top:1px solid #e2e8f0;padding:24px}
+body[data-theme=simple] .welcome{background-image:linear-gradient(90deg,#09090be8,#1e293b55),url('museum-entry.png')}
+body[data-theme=simple] .setup-card{background:#fffffffa;border:1px solid #cbd5e1;box-shadow:0 20px 60px rgba(0,0,0,0.12)}
+.theme-swatch.simple{background:#ffffff;border:1px solid #cbd5e1;position:relative}
+.theme-swatch.simple img{opacity:.2;filter:grayscale(1) brightness(1.6)}
+.theme-swatch.simple::after{content:'';position:absolute;left:28%;top:18%;width:44%;height:64%;background:#fff;border:3px solid #18181b;box-shadow:0 3px 8px rgba(0,0,0,0.15);border-radius:2px}
 
 body[data-theme=tradition]{--wall:#eee5d3;--surface:#fff9ec;--ink:#49392a;--muted:#7e6952;--accent:#486b5b;--frame:#795035;--line:#d8c6a7}
 body[data-theme=tradition] .museum-bay::before{background:linear-gradient(90deg,#553822 0 2.5%,transparent 2.5% 97.5%,#553822 97.5%),linear-gradient(to bottom,#513725 0 7%,#7b4030 7% 8%,#446c5a 8% 10%,#ac8c50 10% 10.5%,transparent 10.5% 88%,#725139 88% 90%,#543c2d 90%),url('museum-hanok.jpg');background-position:center,center,left center;background-size:auto,auto,900% 100%;box-shadow:inset 0 0 35px #67442024}
