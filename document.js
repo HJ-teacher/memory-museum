@@ -1,11 +1,21 @@
 /* 밝은 종이를 찾는 경량 Canvas 보조 기능입니다. AI나 외부 서버는 사용하지 않습니다.
    어두운 바탕의 흰 종이에 적합하며, 확신이 없으면 null을 반환합니다. */
 window.MuseumAdvanced = (() => {
-  function detectPaper(source) {
+  function detectPaper(source, qrLocation = null) {
     const w = 320, h = Math.round(source.height / source.width * w), c = document.createElement('canvas');
     c.width = w; c.height = h; const ctx = c.getContext('2d', { willReadFrequently: true }); ctx.drawImage(source, 0, 0, w, h);
     const data = ctx.getImageData(0, 0, w, h).data, seen = new Uint8Array(w * h), queue = new Int32Array(w * h);
-    const bright = i => { const p = i * 4; return Math.min(data[p], data[p + 1], data[p + 2]) > 165 && (data[p] + data[p + 1] + data[p + 2]) / 3 > 198; };
+    const lums = new Uint8Array(w * h);
+    let lumSum = 0;
+    for (let i = 0; i < w * h; i++) {
+      const p = i * 4;
+      const lum = (data[p] * 299 + data[p + 1] * 587 + data[p + 2] * 114) / 1000;
+      lums[i] = lum;
+      lumSum += lum;
+    }
+    const avgLum = lumSum / (w * h);
+    const thresh = Math.max(100, Math.min(180, avgLum * 1.15));
+    const bright = i => lums[i] >= thresh;
     let best = null;
     for (let start = 0; start < w * h; start++) {
       if (seen[start] || !bright(start)) continue;
@@ -20,22 +30,22 @@ window.MuseumAdvanced = (() => {
       }
       if (!best || end > best.size) best = { size: end, points: [tl, tr, br, bl] };
     }
-    if (!best || best.size < w * h * .06) return null;
+    if (!best || best.size < w * h * .05) return null;
     const p = best.points;
-    if (p.some(([x, y]) => x < 4 || y < 4 || x > w - 5 || y > h - 5)) return null;
+    if (p.some(([x, y]) => x < 1 || y < 1 || x > w - 2 || y > h - 2)) return null;
     const area = Math.abs(p.reduce((sum, v, i) => sum + v[0] * p[(i + 1) % 4][1] - v[1] * p[(i + 1) % 4][0], 0)) / 2;
-    if (area < w * h * .12 || area > w * h * .97 || best.size / area < .16 || best.size / area > 1.12) return null;
+    if (area < w * h * .10 || area > w * h * .98 || best.size / area < .14 || best.size / area > 1.2) return null;
     const lengths = p.map((v, i) => Math.hypot(v[0] - p[(i + 1) % 4][0], v[1] - p[(i + 1) % 4][1]));
-    if (Math.min(...lengths) < 35 || Math.min(lengths[0], lengths[2]) / Math.max(lengths[0], lengths[2]) < .65 || Math.min(lengths[1], lengths[3]) / Math.max(lengths[1], lengths[3]) < .65) return null;
+    if (Math.min(...lengths) < 25 || Math.min(lengths[0], lengths[2]) / Math.max(lengths[0], lengths[2]) < .55 || Math.min(lengths[1], lengths[3]) / Math.max(lengths[1], lengths[3]) < .55) return null;
     const width = (lengths[0] + lengths[2]) / 2, height = (lengths[1] + lengths[3]) / 2;
-    if (width / height < .4 || width / height > 2.5) return null;
+    if (width / height < .35 || width / height > 2.8) return null;
     // 네 꼭짓점 사이의 변이 바깥으로 볼록한지 검증합니다.
     for (let i = 0; i < 4; i++) { const a = p[i], b = p[(i + 1) % 4], d = p[(i + 2) % 4]; if ((b[0] - a[0]) * (d[1] - b[1]) - (b[1] - a[1]) * (d[0] - b[0]) <= 0) return null; }
     const ratio = source.width / w;
     return p.map(([x, y]) => [x * ratio, y * ratio]);
   }
-  function documentCrop(source) {
-    const p = detectPaper(source); if (!p) return null;
+  function documentCrop(source, qrLocation = null) {
+    const p = detectPaper(source, qrLocation); if (!p) return null;
     const distance = (a,b) => Math.hypot(a[0]-b[0],a[1]-b[1]);
     return warp(source,p,(distance(p[0],p[1])+distance(p[2],p[3]))/2,(distance(p[0],p[3])+distance(p[1],p[2]))/2);
   }

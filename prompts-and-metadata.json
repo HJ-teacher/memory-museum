@@ -32,6 +32,12 @@
     {
       "file": "museum-ceiling.png",
       "prompt": "Photorealistic orthographic straight-up ivory coffered museum ceiling, luminous frosted skylight, brass trim and carved plaster, square repeat texture, no walls, no people, no text."
+    },
+    {
+      "file": "museum-hanok.jpg",
+      "generated": "built-in imagegen",
+      "optimized_bytes": 173846,
+      "prompt": "Photorealistic frontal Korean hanok wall, centered changho double doors with fine wood lattice and translucent hanji, honey brown timber beams, subtle green and rust red dancheong, cream hanji panels, warm light, no people or text."
     }
   ]
 }

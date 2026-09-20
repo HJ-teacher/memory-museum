@@ -191,17 +191,18 @@ function updateGuide() {
   const r = MuseumCapture.guide(v.videoWidth, v.videoHeight, state?.settings.landscape);
   Object.assign($('guide').style, { left: (r.x / v.videoWidth * 100) + '%', top: (r.y / v.videoHeight * 100) + '%', width: (r.w / v.videoWidth * 100) + '%', height: (r.h / v.videoHeight * 100) + '%' });
 }
+let lastQRLocation = null;
 const scanCanvas = document.createElement('canvas'), scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
 function scan() {
   clearTimeout(scanTimer); if (!stream) return;
   try {
     const v = $('video');
     if (!document.hidden && v.readyState >= 2 && v.videoWidth && window.jsQR) {
-      const scale = Math.min(1, 800 / v.videoWidth); scanCanvas.width = Math.round(v.videoWidth * scale); scanCanvas.height = Math.round(v.videoHeight * scale);
+      const scale = Math.min(1, 960 / v.videoWidth); scanCanvas.width = Math.round(v.videoWidth * scale); scanCanvas.height = Math.round(v.videoHeight * scale);
       scanCtx.drawImage(v, 0, 0, scanCanvas.width, scanCanvas.height);
       const pixels = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
       const qr = jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'dontInvert' });
-      const now = performance.now(); lastQR = qr?.data || null; if (qr) lastSeen = now;
+      const now = performance.now(); lastQR = qr?.data || null; if (qr) { lastSeen = now; lastQRLocation = qr.location; }
       const armed = gate.observe(!!qr, now);
       if (qr && armed && state.settings.auto && !busy && !togglePending && !$('modal').open && ready) {
         const slot = MuseumQR.slotFor(qr.data, state.settings.count, state.works);
@@ -226,7 +227,7 @@ async function capture(slot, qrText = null) {
       }
     }
     $('countdown').textContent = '찰칵!'; gate.lock(performance.now());
-    const result = await MuseumCapture.fromVideo($('video'), { ...state.settings, review: !qrText });
+    const result = await MuseumCapture.fromVideo($('video'), { ...state.settings, review: !qrText, qrLocation: lastQRLocation });
     $('videoShell').classList.add('flash'); setTimeout(() => $('videoShell').classList.remove('flash'), 350);
     if (!result) { status('촬영을 취소했어요. 다시 촬영할 수 있습니다.'); return; }
     const saved = await register(result.blob, slot);
