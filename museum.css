@@ -65,20 +65,34 @@ body[data-theme=art] .museum-wall-photo{filter:brightness(1.07) saturate(.65)}bo
  .teacher-toolbar .row:first-child{gap:8px}.teacher-toolbar #uploadBtn,.teacher-toolbar #shootBtn{min-height:48px}
 }
 
-/* 네 전시관의 재료와 조명. 장식 면에만 적용하여 작품 원색은 보존합니다. */
-body[data-theme=art]{--wall:#fff5ed;--surface:#fffdf9;--ink:#574b58;--muted:#806e7c;--accent:#9b6175;--frame:#e1b7ad;--line:#e9d8d9}
-body[data-theme=art] .museum-bay::before{background:radial-gradient(ellipse at 50% 15%,#fffdf6 0,transparent 65%),linear-gradient(to bottom,#ebd2d8 0 5%,#f8e5e7 5% 87%,#e1b5a9 87% 89%,#faeee7 89%);box-shadow:inset 0 0 0 2px #fff4}
-body[data-theme=art] .museum-bay:nth-of-type(even)::before{background:radial-gradient(ellipse at 50% 15%,#fffff6 0,transparent 65%),linear-gradient(to bottom,#cbded4 0 5%,#e3f0e9 5% 87%,#b7cbbd 87% 89%,#f4f4e7 89%)}
-body[data-theme=art] .museum-ceiling{background:repeating-linear-gradient(0deg,transparent 0 360px,#fff9 360px 410px,transparent 410px 850px),linear-gradient(90deg,#e1eaf0 0 8%,#fff9ec 8% 92%,#e1eaf0 92%);box-shadow:inset 0 0 70px #d4bca2}
-body[data-theme=art] .museum-floor{filter:brightness(1.22) saturate(.48)}
-body[data-theme=art] .museum-door-wall{background-image:linear-gradient(#ffddd744,#ffddd744),url('museum-door.png');background-blend-mode:screen}
-body[data-theme=art] .wall-painting,body[data-theme=art].grid-mode .frame{background:#d3a3a2;box-shadow:inset 0 0 0 6px #f8d9c4,inset 0 0 0 13px #cb9b9e,6px 12px 22px #6b3e3929!important;border-radius:7px!important}
-body[data-theme=art] .museum-bay:nth-of-type(even) .wall-painting,body[data-theme=art].grid-mode .art-slot:nth-child(even) .frame{background:#a9c7bc;box-shadow:inset 0 0 0 6px #f7ead6,inset 0 0 0 13px #a1bdb3,6px 12px 22px #3e6b5b29!important}
-body[data-theme=art] .gallery-heading,body[data-theme=art] .teacher-toolbar{background:#fff8f2}
-body[data-theme=art].grid-mode .gallery-area{background:linear-gradient(135deg,#fbeded,#edf4e9);padding:20px;border-radius:10px}
-body[data-theme=art] .welcome{background-image:linear-gradient(90deg,#513753bd,#d9aabb33),url('museum-entry.png')}
-.theme-swatch.art{background:linear-gradient(110deg,#f4d0d7 0 45%,#f9efd9 45% 55%,#cbded6 55%);position:relative}.theme-swatch.art img{opacity:.3;filter:brightness(1.8) saturate(.2)}
+/* 네 전시관의 재료와 조명. 테마별로 극적인 차별성을 부여하며 작품 원색은 온전히 보존합니다. */
 
+/* ==========================================================================
+   2. 우리 반 미술관 (art) - 밝고 감각적인 북유럽풍 현대 미술관
+   ========================================================================== */
+body[data-theme=art]{--wall:#fdf7f2;--surface:#ffffff;--ink:#342638;--muted:#726078;--accent:#8e44ad;--frame:#f0a89a;--line:#ecd8cf}
+body[data-theme=art] .museum-floor{background:repeating-linear-gradient(90deg,#ded0ba 0 2px,#f8f0e3 2px 68px,#d3c3a9 68px 70px),repeating-linear-gradient(0deg,rgba(0,0,0,0.03) 0 110px,rgba(0,0,0,0.07) 110px 112px),#f3ebdc;filter:none!important;box-shadow:inset 0 0 90px rgba(180,140,100,0.22)}
+body[data-theme=art] .museum-ceiling{background:linear-gradient(180deg,#ffffff 0%,#edf4f9 100%),repeating-linear-gradient(90deg,#bacbda 0 3px,transparent 3px 130px),repeating-linear-gradient(0deg,#bacbda 0 3px,transparent 3px 130px);box-shadow:inset 0 0 80px rgba(120,160,200,0.28)}
+body[data-theme=art] .museum-bay::before{background:radial-gradient(ellipse at 50% 16%,#ffffff 0%,#ffffff88 35%,transparent 70%),linear-gradient(to bottom,#f3d5dc 0 6%,#faedf0 6% 91%,#e5c1cb 91% 93%,#d4a5b1 93% 100%);box-shadow:inset 0 0 40px rgba(220,180,190,0.25)}
+body[data-theme=art] .museum-bay:nth-of-type(even)::before{background:radial-gradient(ellipse at 50% 16%,#ffffff 0%,#ffffff88 35%,transparent 70%),linear-gradient(to bottom,#d0e7de 0 6%,#eef7f3 6% 91%,#badbce 91% 93%,#9ec7b5 93% 100%);box-shadow:inset 0 0 40px rgba(180,220,200,0.25)}
+body[data-theme=art] .wall-painting,body[data-theme=art].grid-mode .frame{background:#fff!important;border:8px solid #f1a596!important;border-radius:14px!important;box-shadow:0 14px 28px rgba(190,80,100,0.22),inset 0 0 0 4px #ffeae4!important;padding:18px!important}
+body[data-theme=art] .museum-bay:nth-of-type(even) .wall-painting,body[data-theme=art].grid-mode .art-slot:nth-child(even) .frame{border-color:#84c9b1!important;box-shadow:0 14px 28px rgba(60,150,120,0.22),inset 0 0 0 4px #e0f5ed!important}
+body[data-theme=art] .wall-empty,body[data-theme=art].grid-mode .empty-mark{background:#fff8f6!important;color:#f0a89a!important;font-weight:700!important;border-radius:8px}
+body[data-theme=art] .wall-caption{color:#523e57;font-weight:600;font-size:14px}
+body[data-theme=art] .museum-door-wall{background:radial-gradient(ellipse at 50% 20%,#fff 0%,#faedf0 70%),linear-gradient(to bottom,#f3d5dc 0 6%,#faedf0 6% 91%,#e5c1cb 91% 93%,#d4a5b1 93% 100%)}
+body[data-theme=art] .museum-door{width:32%;height:80%;top:14%;left:34%;background:linear-gradient(135deg,#ffffff 0%,#faedf0 100%);border:3px solid #e5a596;border-radius:18px 18px 4px 4px;box-shadow:0 14px 34px rgba(190,100,120,0.25);display:flex;justify-content:center;align-items:start}
+body[data-theme=art] .museum-door:hover:not(:disabled){background:linear-gradient(135deg,#ffffff 0%,#f5dee4 100%)}
+body[data-theme=art] .museum-door span{background:#8e44ad;color:#fff;border-radius:22px;font-weight:700;font-size:14px;letter-spacing:.04em;padding:10px 22px;margin-top:28px;box-shadow:0 4px 14px rgba(142,68,173,0.35)}
+body[data-theme=art] .gallery-heading,body[data-theme=art] .teacher-toolbar{background:#fff7f2;border-color:#f0dcd0}
+body[data-theme=art] .gallery-heading h1{color:#8e44ad;font-weight:800}
+body[data-theme=art].grid-mode .gallery-area{background:linear-gradient(135deg,#fbedf0 0%,#edf7f2 100%);padding:26px;border-radius:12px;border:1px solid #ebd4cf}
+body[data-theme=art] .welcome{background-image:linear-gradient(90deg,#5e2d6ebb,#e3aab838),url('museum-entry.png')}
+body[data-theme=art] .setup-card{background:#fffffffa;border:1px solid #ebd0c8;box-shadow:0 18px 50px rgba(140,60,80,0.14)}
+.theme-swatch.art{background:linear-gradient(110deg,#f5cbd4 0 48%,#fbf2dc 48% 52%,#cde7dc 52%);position:relative}.theme-swatch.art img{opacity:.2;filter:brightness(1.8) saturate(.2)}
+
+/* ==========================================================================
+   3. 심플 갤러리 (simple) - 모던 미니멀 화이트 큐브
+   ========================================================================== */
 body[data-theme=simple],body[data-theme=simple].inside-museum{--wall:#f8f9fa;--surface:#fff;--ink:#18181b;--muted:#64748b;--accent:#09090b;--frame:#18181b;--line:#e2e8f0;background:#f8fafc}
 body[data-theme=simple] .museum-bay::before{background:radial-gradient(ellipse at 50% 12%,#ffffff 0%,#ffffff99 35%,transparent 70%),linear-gradient(to bottom,#edf0f2 0%,#f8f9fa 6%,#f8f9fa 93%,#e2e8f0 93% 94%,#27272a 94% 100%);box-shadow:inset 0 0 40px rgba(0,0,0,0.03)}
 body[data-theme=simple] .museum-ceiling{background:linear-gradient(90deg,#272a2d 0 3px,#eef1f3 3px 18%,#272a2d 18% 19%,#f4f6f8 19% 81%,#272a2d 81% 82%,#eef1f3 82% 97%,#272a2d 97% 100%);box-shadow:inset 0 0 50px rgba(0,0,0,0.06)}
@@ -113,17 +127,47 @@ body[data-theme=simple] .setup-card{background:#fffffffa;border:1px solid #cbd5e
 .theme-swatch.simple img{opacity:.2;filter:grayscale(1) brightness(1.6)}
 .theme-swatch.simple::after{content:'';position:absolute;left:28%;top:18%;width:44%;height:64%;background:#fff;border:3px solid #18181b;box-shadow:0 3px 8px rgba(0,0,0,0.15);border-radius:2px}
 
-body[data-theme=tradition]{--wall:#eee5d3;--surface:#fff9ec;--ink:#49392a;--muted:#7e6952;--accent:#486b5b;--frame:#795035;--line:#d8c6a7}
-body[data-theme=tradition] .museum-bay::before{background:linear-gradient(90deg,#553822 0 2.5%,transparent 2.5% 97.5%,#553822 97.5%),linear-gradient(to bottom,#513725 0 7%,#7b4030 7% 8%,#446c5a 8% 10%,#ac8c50 10% 10.5%,transparent 10.5% 88%,#725139 88% 90%,#543c2d 90%),url('museum-hanok.jpg');background-position:center,center,left center;background-size:auto,auto,900% 100%;box-shadow:inset 0 0 35px #67442024}
-body[data-theme=tradition] .museum-ceiling{background:repeating-linear-gradient(0deg,#0000 0 170px,#705035 170px 205px,#3d2b21 205px 216px,#0000 216px 500px),repeating-linear-gradient(90deg,#ece0c7 0 280px,#7a5435 280px 323px,#423026 323px 332px);box-shadow:inset 0 0 85px #40332650}
-body[data-theme=tradition] .museum-floor{filter:brightness(.78) saturate(.65)}
-body[data-theme=tradition] .museum-door-wall{background-image:url('museum-hanok.jpg');background-size:100% 100%;filter:none}
-body[data-theme=tradition] .museum-door span{background:#fff1d8ed;border:2px solid #6e4c31;color:#503824;font-family:Batang,serif}
-body[data-theme=tradition] .wall-painting,body[data-theme=tradition].grid-mode .frame{background:#87623e url('museum-floor.png') center/700px 700px;box-shadow:inset 0 0 0 5px #4f3525,inset 0 0 0 10px #af9162,inset 0 0 0 15px #735135,6px 12px 20px #39250d40!important;border-radius:1px!important}
-body[data-theme=tradition] .wall-caption{color:#503b29;font-family:Batang,serif;font-size:17px;letter-spacing:.12em}
-body[data-theme=tradition] .gallery-heading,body[data-theme=tradition] .teacher-toolbar{background:#f5ecdb;border-color:#957b54}
-body[data-theme=tradition].grid-mode .gallery-area{background:repeating-linear-gradient(90deg,#946b3420 0 1px,transparent 1px 160px),#f2e8d2;padding:24px;border-top:9px solid #735039;border-bottom:9px solid #735039}
-body[data-theme=tradition] .welcome{background-image:linear-gradient(90deg,#282417c9,#40332622),url('museum-hanok.jpg');background-position:center;background-size:cover}
-body[data-theme=tradition] .setup-card{background:#fff8e9ed;border:1px solid #b39b73;box-shadow:0 15px 60px #25170944}
-.theme-swatch.tradition{background:#e8d8bc url('museum-hanok.jpg') center/cover}.theme-swatch.tradition img{opacity:0}
+/* ==========================================================================
+   4. 전통 전시관 (tradition) - 한국의 미가 살아 숨쉬는 한옥 대청과 족자 회랑
+   ========================================================================== */
+body[data-theme=tradition]{--wall:#f6efe0;--surface:#fffcf5;--ink:#2c2016;--muted:#69533f;--accent:#245e45;--frame:#442413;--line:#dcc7a7;font-family:"Batang","Songti SC",serif}
+/* 조선 전통 우물마루 (대청마루 원목 격자 구조 & 옻칠 광택) */
+body[data-theme=tradition] .museum-floor{background:repeating-linear-gradient(0deg,#1c0e07 0px 5px,#3b1e0f 5px 22px,#231108 22px 26px,transparent 26px 260px),repeating-linear-gradient(90deg,#1c0e07 0px 3px,#4d2a15 3px 6px,#6e3e20 6px 65px,#583119 65px 68px,#1c0e07 68px 71px,#532d17 71px 74px,#754323 74px 130px,#442412 130px 136px),radial-gradient(ellipse at 50% 15%,rgba(255,230,180,0.25) 0%,transparent 70%),linear-gradient(180deg,rgba(0,0,0,0.45) 0%,rgba(255,255,255,0.04) 40%,rgba(0,0,0,0.45) 100%),#422412;background-size:100% 260px,136px 260px,100% 100%,100% 100%,100% 100%!important;filter:none!important;box-shadow:inset 0 0 130px rgba(15,7,3,0.85)}
+/* 한옥 서까래와 대들보, 뇌록 단청 머리초 천장 */
+body[data-theme=tradition] .museum-ceiling{background:repeating-linear-gradient(0deg,#1f1007 0px 8px,#3d2111 8px 38px,#241208 38px 44px,transparent 44px 300px),repeating-linear-gradient(0deg,transparent 0px 44px,#1f5038 44px 54px,#8a2e1e 54px 62px,#c69438 62px 66px,#1a3f2d 66px 72px,transparent 72px 300px),repeating-linear-gradient(90deg,#180c05 0px 3px,#422413 3px 25px,#261309 25px 28px,#f4eedf 28px 72px,#ded4be 72px 75px),#30190c;background-size:100% 300px,100% 300px,75px 100%,100% 100%!important;box-shadow:inset 0 0 140px rgba(10,5,2,0.9)}
+/* 한옥 대청 회랑 벽체 (소나무 원목 기둥, 단청 창방, 기단석, 세살 창호 격자문양) */
+body[data-theme=tradition] .museum-bay::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 16%,rgba(255,238,200,0.45) 0%,transparent 60%),linear-gradient(90deg,#2b160b 0%,#542e17 2.5%,#442412 5%,#1e0e06 7%,transparent 7%,transparent 93%,#1e0e06 93%,#442412 95%,#542e17 97.5%,#2b160b 100%),linear-gradient(to bottom,#221107 0%,#462512 4%,#842f21 4.5%,#1e4e37 6%,#b88632 6.5%,#381c0d 7.5%,transparent 7.5%,transparent 91%,#1e1b19 91%,#35302d 93%,#221e1c 95%,#141211 100%),repeating-linear-gradient(0deg,transparent 0 24px,rgba(110,65,35,0.18) 24px 26px),repeating-linear-gradient(90deg,transparent 0 24px,rgba(110,65,35,0.18) 24px 26px),#f6f0e2;transform:translateZ(.5px);box-shadow:inset 0 0 50px rgba(45,24,10,0.25)}
+/* 한국 전통 족자(軸子) 표구 배첩 및 비단 테두리 */
+body[data-theme=tradition] .wall-painting{background:#fcf9f2!important;border-top:18px solid #2a160a!important;border-bottom:22px solid #1c0e06!important;border-left:18px solid #2d5545!important;border-right:18px solid #2d5545!important;box-shadow:0 0 0 3px #cca255,inset 0 0 0 5px #ebe0cb,0 18px 40px rgba(25,12,4,0.5)!important;border-radius:2px!important;padding:24px!important;position:absolute;overflow:visible!important}
+body[data-theme=tradition].grid-mode .frame{position:relative!important;width:100%!important;aspect-ratio:4/5!important;background:#fcf9f2!important;border-top:14px solid #2a160a!important;border-bottom:18px solid #1c0e06!important;border-left:14px solid #2d5545!important;border-right:14px solid #2d5545!important;box-shadow:0 0 0 2px #cca255,inset 0 0 0 4px #ebe0cb,0 8px 24px rgba(25,12,4,0.3)!important;border-radius:2px!important;padding:18px!important;overflow:visible!important}
+body[data-theme=tradition] .wall-painting::before,body[data-theme=tradition].grid-mode .frame::before{content:'◆';position:absolute;top:-28px;left:50%;transform:translateX(-50%);font-size:13px;color:#b03020;text-shadow:0 2px 4px rgba(0,0,0,0.5);z-index:10}
+/* 빈 족자 자리 - 붉은 인주 낙관(落款) 도장 인장 스타일 */
+body[data-theme=tradition] .wall-empty,body[data-theme=tradition] .empty-mark{background:#fdfaf3!important;color:#9e2a1e!important;font-family:"Batang","Gungsuh",serif!important;font-weight:700!important;border:3px solid #b83628!important;border-radius:6px;box-shadow:inset 0 0 10px rgba(184,54,40,0.25);letter-spacing:.1em}
+body[data-theme=tradition] .wall-empty::before{content:'第 ';font-size:.7em;opacity:.8}
+body[data-theme=tradition] .wall-empty::after{content:' 點';font-size:.7em;opacity:.8}
+body[data-theme=tradition] .wall-caption{color:#48321e;font-family:"Batang","Gungsuh",serif;font-size:15px;letter-spacing:.12em;font-weight:700}
+/* 한옥 실사 쌍여닫이 문 & 훈민정음 금박 편액 */
+body[data-theme=tradition] .museum-door-wall{background-image:url('museum-hanok.jpg');background-position:center center;background-size:cover;filter:none}
+body[data-theme=tradition] .museum-door{width:36%;height:84%;top:11%;left:32%;background:transparent;border:0;display:flex;justify-content:center;align-items:start}
+body[data-theme=tradition] .museum-door:hover:not(:disabled){background:radial-gradient(ellipse at 50% 50%,rgba(255,230,160,0.25) 0%,transparent 70%)}
+body[data-theme=tradition] .museum-door span{background:#15110e!important;color:#ffd978!important;border:4px solid #8e6b30!important;box-shadow:0 10px 30px rgba(0,0,0,0.7),inset 0 0 15px rgba(142,107,48,0.4)!important;font-family:"Batang","Gungsuh",serif!important;font-size:19px!important;font-weight:700!important;letter-spacing:.25em!important;padding:12px 30px!important;border-radius:3px!important;text-shadow:0 2px 4px rgba(0,0,0,0.8);margin-top:22px}
+/* 전통 전시관 헤딩 및 툴바 */
+body[data-theme=tradition] .gallery-heading,body[data-theme=tradition] .teacher-toolbar{background:#f6efe0;border-color:#cca255}
+body[data-theme=tradition] .gallery-heading h1{font-family:"Batang","Gungsuh",serif;color:#351e10;font-weight:700}
+body[data-theme=tradition] .room-label,body[data-theme=tradition] .room-top button,body[data-theme=tradition] .room-actions select{background:#fbf7eedb;border:1px solid #cca255;color:#3d2414;font-family:"Batang","Gungsuh",serif}
+body[data-theme=tradition] .room-actions #exitRoomBtn{background:#351e10;color:#ffd978;border-color:#cca255}
+body[data-theme=tradition] .tour-controls{background:#fbf7eed9;border:1px solid #cca255;box-shadow:0 4px 16px rgba(45,25,10,0.2)}
+body[data-theme=tradition] .tour-controls button{color:#3d2414;font-family:"Batang","Gungsuh",serif}
+body[data-theme=tradition] .tour-controls .tour-main{background:#245e45;color:#fbf8f0}
+body[data-theme=tradition] .walk-pad button{background:#fbf7eeea;border-color:#cca255;color:#3d2414}
+body[data-theme=tradition] .view-controls button{font-family:"Batang","Gungsuh",serif;color:#4a3220}
+body[data-theme=tradition] .view-controls button[aria-pressed=true]{border-color:#351e10;background:#351e10;color:#ffd978}
+body[data-theme=tradition] .view-controls #captureViewBtn,body[data-theme=tradition] #shootBtn{background:#245e45;border-color:#245e45;color:#fff}
+body[data-theme=tradition] .camera-panel #manualBtn{background:#245e45;border-color:#245e45;color:#fff}
+body[data-theme=tradition].grid-mode .gallery-area{background:repeating-linear-gradient(90deg,rgba(148,107,52,0.08) 0 1px,transparent 1px 160px),#f5ecda;padding:26px;border-top:8px solid #442413;border-bottom:8px solid #442413}
+body[data-theme=tradition] .welcome{background-image:linear-gradient(90deg,#201811da,#38261844),url('museum-hanok.jpg');background-position:center;background-size:cover}
+body[data-theme=tradition] .setup-card{background:#fffaf0fa;border:1px solid #cca255;box-shadow:0 18px 60px rgba(35,18,8,0.22)}
+.theme-swatch.tradition{background:#e8d8bc url('museum-hanok.jpg') center/cover;border:2px solid #8e6b30;position:relative}
+.theme-swatch.tradition img{opacity:0}
 .grid-mode .frame.empty .empty-mark{position:absolute;inset:7%;width:auto;height:auto;background:#fbf8ee;display:grid;place-items:center}
+
