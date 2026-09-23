@@ -1,0 +1,182 @@
+/* 네 가지 전시관 분위기. 테마마다 실제 전시 공간을 참고해 생성한 사진 자산(rooms/)으로 벽·바닥·천장·문·액자를 바꿉니다.
+   학생 작품 이미지에는 어떤 필터도 적용하지 않습니다.
+   museum   : 클래식 박물관 — 아이보리 벽, 금빛 액자, 헤링본 마루 (기본 규칙은 museum.css)
+   art      : 유럽 궁전 미술관 — 진홍 다마스크 벽, 바로크 금박 액자, 대리석 바닥, 금박 격자 천장·천창
+   simple   : 현대 미술관 — 차콜 벽과 스포트라이트, 폴리싱 콘크리트, 트랙 조명, 매트 액자
+   tradition: 조선 궁궐관 — 주칠 기둥과 단청, 띠살 창호, 전돌 바닥, 우물반자 천장, 족자, 꽃살문(입구)과 일월오봉도(복도 끝) */
+
+/* ---------- 공통: 테마 미리보기(설정·로비 카드) ---------- */
+.theme-swatch,.room-thumb{position:relative;display:block;overflow:hidden}
+.theme-swatch img,.room-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.room-thumb{width:100%;height:100px;flex-shrink:0}
+.theme-choice small{display:block;font-size:.72rem;color:var(--muted);font-weight:400;line-height:1.35;margin-top:2px}
+
+/* 로비 전시관 카드와 삭제 버튼 */
+.room-card-wrap{position:relative;min-width:0;display:flex}
+.room-card-wrap>.room-card{flex:1;width:100%}
+.room-delete{position:absolute;top:8px;right:8px;min-height:34px;padding:5px 11px;font-size:.78rem;background:#fffffff0;color:#9a2f22;border:1px solid #e6c3bd;border-radius:999px;box-shadow:0 2px 8px #0002;z-index:1}
+.room-delete:hover:not(:disabled){background:#fff1ee}
+.settings-danger{margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+.settings-danger p{font-size:.85rem;color:var(--muted);margin:0 0 10px}
+button.danger,.settings-danger button{color:#9a2f22;border-color:#e6c3bd}
+
+/* 촬영 메뉴 */
+.shoot-menu{position:fixed;z-index:35;width:290px;padding:8px;border-radius:10px;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:0 18px 50px #0004;display:flex;flex-direction:column;gap:4px}
+.shoot-menu[hidden]{display:none}
+.shoot-menu button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:0;background:transparent;border-radius:7px;padding:10px 12px;min-height:52px;width:100%;color:inherit}
+.shoot-menu button:hover:not(:disabled),.shoot-menu button:focus-visible{background:color-mix(in srgb,var(--accent) 12%,transparent);transform:none}
+.shoot-menu strong{font-size:.95rem;font-weight:700}
+.shoot-menu span{font-size:.78rem;color:var(--muted);font-weight:400;line-height:1.4}
+#shootBtn .shoot-live{display:none;margin-left:6px;font-size:.72rem;padding:2px 7px;border-radius:999px;background:#fff3;border:1px solid #fff6}
+#shootBtn.camera-live .shoot-live{display:inline-block}
+#shootBtn.camera-live::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:#ff5a4f;margin-right:7px;vertical-align:1px;animation:live-dot 1.4s ease-in-out infinite}
+@keyframes live-dot{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){#shootBtn.camera-live::before{animation:none}}
+
+
+.room-card{color:var(--ink)}
+.room-card strong{padding-right:64px!important}
+@media(max-width:760px){.room-delete{top:auto;bottom:8px}.room-card strong{padding-right:12px!important}.room-card span{padding-right:64px!important}}
+
+/* ==========================================================================
+   공통: 사진 액자(작품 크기에 맞춰 늘어나고, 작품은 액자 안쪽 창에 놓임)
+   ========================================================================== */
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .museum-bay::before{background:var(--room-wall) center/100% 100% no-repeat;transform:translateZ(.5px)}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .museum-floor{background:var(--room-floor) 0 0/var(--floor-size) var(--floor-size);filter:none}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .museum-ceiling{background:var(--room-ceiling) 0 0/var(--ceiling-size) var(--ceiling-size);box-shadow:inset 0 0 60px #0004}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .museum-door-wall{background:var(--room-door) center/100% 100% no-repeat}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .wall-painting,
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .wall-painting:hover:not(:disabled){background:var(--room-frame) center/100% 100% no-repeat;padding:0;overflow:visible;box-shadow:0 18px 30px #0000006b!important}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .wall-painting img,
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .wall-empty{position:absolute;left:var(--fl);top:var(--ft);width:var(--fw);height:var(--fh);background:var(--paper)}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .wall-empty{display:grid;place-items:center;color:var(--empty-ink);font-family:inherit}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]).grid-mode .frame,
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]).grid-mode .frame.empty{background:var(--room-frame) center/100% 100% no-repeat;padding:0!important;border:0!important;border-radius:0!important;box-shadow:0 10px 20px #0000004d!important;opacity:1;overflow:visible}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]).grid-mode .frame img,
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]).grid-mode .frame.empty .empty-mark{position:absolute;left:var(--fl);top:var(--ft);width:var(--fw);height:var(--fh);inset:auto;background:var(--paper);color:var(--empty-ink)}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .welcome{background:linear-gradient(90deg,#0d0a08c7 0%,#0d0a0866 50%,#0d0a0833 100%),var(--room-entry) center/cover}
+body:is([data-theme=art],[data-theme=simple],[data-theme=tradition]) .museum-door{background:transparent;border:0}
+
+/* ==========================================================================
+   유럽 궁전 미술관 (art) — 루브르 그랑드 갤러리·우피치 같은 붉은 벽 회화관
+   ========================================================================== */
+body[data-theme=art]{--wall:#f3ebe0;--surface:#fffaf2;--ink:#2d1a14;--muted:#6f5a4b;--accent:#7a1622;--frame:#b08a3e;--line:#e2d2bb;
+  --room-wall:url('rooms/euro-wall.jpg');--room-floor:url('rooms/euro-floor.jpg');--floor-size:620px;--room-ceiling:url('rooms/euro-ceiling.jpg');--ceiling-size:1300px;--room-door:url('rooms/euro-door.jpg');--room-frame:url('rooms/euro-frame.jpg');--room-entry:url('rooms/euro-entry.jpg');
+  --fl:18.3%;--ft:15.4%;--fw:63.4%;--fh:69.6%;--paper:#fbf8f1;--empty-ink:#b89a5e}
+body[data-theme=art],body[data-theme=art].inside-museum{background:#f3ebe0}
+body[data-theme=art] .primary{background:#7a1622;border-color:#7a1622;color:#fff6e5}
+body[data-theme=art] .topbar{background:#2a0c10;border-bottom:2px solid #b08a3e}
+body[data-theme=art] .topbar .brand,body[data-theme=art] .topbar button{color:#f0dcaa}
+body[data-theme=art] .topbar .brand-note{color:#cdb489}
+body[data-theme=art] .intro h1,body[data-theme=art] .gallery-heading h1,body[data-theme=art] .room-lobby h2{font-family:"Batang","Nanum Myeongjo",Georgia,serif}
+body[data-theme=art] .setup-card{background:#fffaf2f5;border:1px solid #d9c49a;box-shadow:0 20px 60px #0008}
+body[data-theme=art] .theme-choice input:checked+.theme-swatch{outline-color:#b08a3e}
+body[data-theme=art] .gallery-heading{background:#fffaf2;box-shadow:inset 0 -2px 0 #b08a3e}
+body[data-theme=art] .gallery-heading h1{color:#5c0f18}
+body[data-theme=art] .gallery-heading .eyebrow{color:#9a7432}
+body[data-theme=art] .view-controls button[aria-pressed=true]{background:#5c0f18;border-color:#5c0f18;color:#f6e3b4}
+body[data-theme=art] .teacher-toolbar{background:#2a0c10;border-top:2px solid #b08a3e}
+body[data-theme=art] .teacher-toolbar button{background:#fffaf2;border-color:#b08a3e;color:#2d1a14}
+body[data-theme=art] .teacher-toolbar .primary,body[data-theme=art] #shootBtn{background:#7a1622;border-color:#c9a45a;color:#fff3dc}
+body[data-theme=art] .teacher-toolbar .quiet{background:transparent;border-color:transparent;color:#d9c08a}
+body[data-theme=art] .camera-panel #manualBtn,body[data-theme=art] .crop-actions .primary{background:#7a1622;border-color:#7a1622}
+body[data-theme=art] .walk-gallery,body[data-theme=art] .museum-viewport{background:#2a0c10}
+body[data-theme=art] .room-label,body[data-theme=art] .room-top button,body[data-theme=art] .room-actions select{background:#fffaf2e6;border:1px solid #c9a45a;color:#2d1a14}
+body[data-theme=art] .room-actions #exitRoomBtn{background:#5c0f18;color:#f6e3b4;border-color:#c9a45a}
+body[data-theme=art] .tour-controls{background:#fffaf2e6;border:1px solid #c9a45a}
+body[data-theme=art] .tour-controls .tour-main{background:#7a1622;color:#fff3dc}
+body[data-theme=art] .walk-pad button{background:#fffaf2e6;border-color:#c9a45a;color:#2d1a14}
+body[data-theme=art] .walking-hint{color:#fff3dc;text-shadow:0 1px 4px #000}
+body[data-theme=art] .wall-empty{font-family:Georgia,"Batang",serif;font-size:36px;letter-spacing:.08em}
+body[data-theme=art] .wall-caption{top:88%;left:50%;width:auto;min-width:120px;transform:translateX(-50%) translateZ(2px);text-align:center;background:linear-gradient(#d9bb72,#a8843c);color:#2a1a08;padding:5px 16px;font-family:Georgia,"Batang",serif;font-size:13px;letter-spacing:.12em;box-shadow:0 2px 5px #0006;border-radius:2px}
+body[data-theme=art] .wall-caption span{color:#3a2508}
+body[data-theme=art] .museum-door{left:37.5%;width:25%;top:26%;height:68%}
+body[data-theme=art] .museum-door span{background:#2a0c10e8;color:#f0dcaa;border:1px solid #c9a45a;font-family:Georgia,"Batang",serif;letter-spacing:.12em;margin-top:18px}
+body[data-theme=art].grid-mode .gallery-area{background:#5c0f18 url('rooms/euro-wall.jpg') center/cover;padding:26px}
+body[data-theme=art].grid-mode .art-label{color:#f6e3b4}
+
+/* ==========================================================================
+   현대 미술관 (simple) — 국립현대미술관·테이트 모던 같은 어두운 전시실
+   ========================================================================== */
+body[data-theme=simple]{--wall:#121317;--surface:#1c1d22;--ink:#efece6;--muted:#a19d95;--accent:#e9b95c;--frame:#050505;--line:#34353c;color-scheme:dark;
+  --room-wall:url('rooms/modern-wall.jpg');--room-floor:url('rooms/modern-floor.jpg');--floor-size:900px;--room-ceiling:url('rooms/modern-ceiling.jpg');--ceiling-size:1300px;--room-door:url('rooms/modern-door.jpg');--room-frame:url('rooms/modern-frame.jpg');--room-entry:url('rooms/modern-entry.jpg');
+  --fl:15.6%;--ft:12.4%;--fw:68.8%;--fh:75.3%;--paper:#fbfbf9;--empty-ink:#b6b3ad}
+body[data-theme=simple],body[data-theme=simple].inside-museum{background:#0d0e11}
+body[data-theme=simple] button,body[data-theme=simple] select,body[data-theme=simple] input{background:#23242a;border-color:#3a3b43;color:#efece6}
+body[data-theme=simple] .primary{background:#e9b95c;border-color:#e9b95c;color:#17140e}
+body[data-theme=simple] .quiet{background:transparent;border-color:transparent}
+body[data-theme=simple] .topbar{background:#0d0e11;border-bottom:1px solid #26272d}
+body[data-theme=simple] .intro h1,body[data-theme=simple] .gallery-heading h1{font-family:inherit;font-weight:300;letter-spacing:-.01em}
+body[data-theme=simple] .setup-card{background:#17181cf2;border:1px solid #34353c;box-shadow:0 20px 70px #000a}
+body[data-theme=simple] .room-card{background:#1c1d22;border:1px solid #34353c}
+body[data-theme=simple] .room-card span{color:#a19d95}
+body[data-theme=simple] .theme-choice input:checked+.theme-swatch{outline-color:#e9b95c}
+body[data-theme=simple] .gallery-heading,body[data-theme=simple] .teacher-toolbar{background:#0d0e11;border-color:#26272d}
+body[data-theme=simple] .gallery-heading .eyebrow{color:#e9b95c}
+body[data-theme=simple] .view-controls button{background:transparent;border-color:transparent;color:#cfcac0}
+body[data-theme=simple] .view-controls button[aria-pressed=true]{background:#23242a;border-color:#e9b95c;color:#fff}
+body[data-theme=simple] #shootBtn,body[data-theme=simple] .camera-panel #manualBtn,body[data-theme=simple] .crop-actions .primary{background:#e9b95c;border-color:#e9b95c;color:#17140e}
+body[data-theme=simple] .walk-gallery,body[data-theme=simple] .museum-viewport{background:#08080a}
+body[data-theme=simple] .room-label,body[data-theme=simple] .room-top button,body[data-theme=simple] .room-actions select{background:#15161bd9;border:1px solid #3a3b43;color:#e8e4dc}
+body[data-theme=simple] .room-actions #exitRoomBtn{background:#e9b95c;color:#17140e;border-color:#e9b95c}
+body[data-theme=simple] .tour-controls{background:#15161bd9;border:1px solid #3a3b43;box-shadow:0 6px 30px #0008}
+body[data-theme=simple] .tour-controls button{color:#e8e4dc;background:transparent}
+body[data-theme=simple] .tour-controls .tour-main{background:#e9b95c;color:#17140e}
+body[data-theme=simple] .walk-pad button{background:#15161bd9;border-color:#3a3b43;color:#e8e4dc}
+body[data-theme=simple] .walking-hint{color:#d8d3c9;text-shadow:0 1px 4px #000}
+body[data-theme=simple] .progress-track{background:#26272d}
+body[data-theme=simple] dialog::backdrop{background:#000c}
+body[data-theme=simple] .camera-panel,body[data-theme=simple] .crop-layout{background:#1c1d22}
+body[data-theme=simple] .wall-empty{font-weight:200;font-size:44px;letter-spacing:.06em}
+body[data-theme=simple] .wall-caption{top:88%;left:50%;width:auto;min-width:120px;transform:translateX(-50%) translateZ(2px);text-align:center;background:#f4f2ee;color:#1b1b1d;padding:6px 14px;font-size:12px;letter-spacing:.14em;box-shadow:0 2px 6px #0008}
+body[data-theme=simple] .wall-caption span{color:#55534f}
+body[data-theme=simple] .museum-door{left:41.5%;width:17%;top:17%;height:68%}
+body[data-theme=simple] .museum-door span{background:#0b0b0dcc;color:#f3dfb3;border:1px solid #e9b95c88;letter-spacing:.16em;font-size:14px;margin-top:20px;white-space:nowrap}
+body[data-theme=simple].grid-mode #workspace{background:#0d0e11}
+body[data-theme=simple].grid-mode .gallery-area{background:#121317 url('rooms/modern-wall.jpg') center/cover;padding:26px}
+body[data-theme=simple] .art-label{color:#cfcac0}
+
+/* ==========================================================================
+   조선 궁궐관 (tradition) — 경복궁 근정전·창덕궁 인정전 같은 정전 내부
+   ========================================================================== */
+body[data-theme=tradition]{--wall:#f3ead6;--surface:#fffaf0;--ink:#2a1a10;--muted:#6f5a46;--accent:#8e2419;--frame:#2c3f6b;--line:#dcc79f;font-family:"Batang","Gungsuh","Nanum Myeongjo","AppleMyungjo",serif;
+  --room-wall:url('rooms/palace-wall.jpg');--room-floor:url('rooms/palace-floor.jpg');--floor-size:720px;--room-ceiling:url('rooms/palace-ceiling.jpg');--ceiling-size:650px;--room-door:url('rooms/palace-door.jpg');--room-frame:url('rooms/palace-frame.jpg');--room-entry:url('rooms/palace-entry.jpg');
+  --fl:14.5%;--ft:17%;--fw:72.5%;--fh:70.5%;--paper:#efe6d0;--empty-ink:#9e2a1e}
+body[data-theme=tradition],body[data-theme=tradition].inside-museum{background:#f3ead6}
+body[data-theme=tradition] button{border-radius:2px}
+body[data-theme=tradition] .primary{background:#8e2419;border-color:#6f1a12;color:#fff5da}
+body[data-theme=tradition] .topbar{background:#2a160c;border-bottom:2px solid #b8923f}
+body[data-theme=tradition] .topbar .brand,body[data-theme=tradition] .topbar button{color:#f2d99c}
+body[data-theme=tradition] .topbar .brand-note{color:#cdb07a}
+body[data-theme=tradition] .intro h1{font-family:inherit;letter-spacing:.02em}
+body[data-theme=tradition] .setup-card{background:#fffaf0f7;border:1px solid #c8a04a;box-shadow:0 20px 60px #0008}
+body[data-theme=tradition] .room-card{background:#fffaf0;border:1px solid #c8a04a}
+body[data-theme=tradition] .theme-choice input:checked+.theme-swatch{outline-color:#8e2419}
+body[data-theme=tradition] .gallery-heading{background:#f3ead6;box-shadow:inset 0 -2px 0 #b8923f}
+body[data-theme=tradition] .gallery-heading h1{font-family:inherit;font-weight:700;color:#6f1a12;letter-spacing:.06em}
+body[data-theme=tradition] .gallery-heading .eyebrow{color:#2f6f57;font-weight:700}
+body[data-theme=tradition] .view-controls button{color:#4a2c18}
+body[data-theme=tradition] .view-controls button[aria-pressed=true]{background:#2a160c;color:#f2d99c;border-color:#2a160c}
+body[data-theme=tradition] .teacher-toolbar{background:#2a160c;border-top:2px solid #b8923f}
+body[data-theme=tradition] .teacher-toolbar button{background:#f6ecd6;border-color:#c8a04a;color:#2a160c}
+body[data-theme=tradition] .teacher-toolbar .primary,body[data-theme=tradition] #shootBtn{background:#8e2419;border-color:#e0b54e;color:#fff5da}
+body[data-theme=tradition] .teacher-toolbar .quiet{background:transparent;border-color:transparent;color:#d9c08a}
+body[data-theme=tradition] .camera-panel #manualBtn,body[data-theme=tradition] .crop-actions .primary{background:#8e2419;border-color:#6f1a12}
+body[data-theme=tradition] .walk-gallery,body[data-theme=tradition] .museum-viewport{background:#2a160c}
+body[data-theme=tradition] .room-label,body[data-theme=tradition] .room-top button,body[data-theme=tradition] .room-actions select{background:#fffaf0e6;border:1px solid #c8a04a;color:#2a160c}
+body[data-theme=tradition] .room-actions #exitRoomBtn{background:#2a160c;color:#f2d99c;border-color:#c8a04a}
+body[data-theme=tradition] .tour-controls{background:#fffaf0e6;border:1px solid #c8a04a}
+body[data-theme=tradition] .tour-controls button{color:#2a160c}
+body[data-theme=tradition] .tour-controls .tour-main{background:#2f6f57;color:#fffaf0}
+body[data-theme=tradition] .walk-pad button{background:#fffaf0e6;border-color:#c8a04a;color:#2a160c}
+body[data-theme=tradition] .walking-hint{color:#fff5da;text-shadow:0 1px 3px #000,0 0 8px #000}
+body[data-theme=tradition] .wall-empty{font-size:30px;font-weight:700;letter-spacing:.12em}
+body[data-theme=tradition] .wall-caption{top:86%;left:50%;width:auto;min-width:130px;transform:translateX(-50%) translateZ(3px);background:#24150c;color:#f2cf73;padding:6px 18px;text-align:center;font-family:inherit;font-weight:700;font-size:14px;letter-spacing:.18em;border:2px solid #8a6a2c;box-shadow:0 3px 8px #0007}
+body[data-theme=tradition] .wall-caption span{color:#f6ecd6;letter-spacing:.05em}
+body[data-theme=tradition] .museum-door-wall.exit-wall{background-image:url('rooms/palace-exit.jpg')}
+body[data-theme=tradition] .museum-door{left:34%;width:32%;top:24%;height:62%}
+body[data-theme=tradition] .exit-wall .museum-door{left:15%;width:70%;top:26%;height:56%;align-items:end}
+body[data-theme=tradition] .museum-door span{background:#1a0f08e8;color:#f2cf73;border:2px solid #8a6a2c;font-family:inherit;font-size:17px;font-weight:700;letter-spacing:.24em;padding:10px 24px;margin-top:10px}
+body[data-theme=tradition] .exit-wall .museum-door span{margin:0 0 8px}
+body[data-theme=tradition].grid-mode .gallery-area{background:#efe6d2 url('rooms/palace-wall.jpg') center/cover;padding:26px}
+body[data-theme=tradition].grid-mode .art-label{background:#24150ccc;color:#f2cf73;padding:2px 10px}

@@ -45,8 +45,13 @@ window.MuseumWalk = (() => {
       }
       world.append(el);
     }
+    // 입구 문과 첫 번째 벽 사이의 빈 구간도 같은 벽으로 채웁니다.
+    for (const left of [true, false]) {
+      const side = surface('museum-bay unassigned-wall entry-side', 800, HEIGHT, `translate3d(${left ? -WIDTH / 2 : WIDTH / 2}px,0,400px) rotateY(${left ? 90 : -90}deg)`);
+      const photo = document.createElement('img'); photo.src = 'museum-wall-panel.png'; photo.alt = ''; photo.className = 'museum-wall-photo'; photo.draggable = false; side.append(photo); world.append(side);
+    }
     for (const exit of [false,true]) {
-      const end = surface('museum-door-wall', WIDTH, HEIGHT, exit ? `translate3d(0,0,${-depth}px)` : 'translate3d(0,0,800px) rotateY(180deg)');
+      const end = surface(exit ? 'museum-door-wall exit-wall' : 'museum-door-wall entry-wall', WIDTH, HEIGHT, exit ? `translate3d(0,0,${-depth}px)` : 'translate3d(0,0,800px) rotateY(180deg)');
       const door = document.createElement('button'); door.className = 'museum-door'; door.setAttribute('aria-label', exit ? '출구 문 · 전시관 로비로 나가기' : '입구 문 · 전시관 로비로 나가기');
       const label = document.createElement('span'); label.textContent = exit ? '출구 · 로비로 나가기' : '입구 · 로비로 나가기'; door.append(label);
       door.onclick = () => { if (!dragged && pending < 0) window.dispatchEvent(new Event('museum-exit')); }; end.append(door); world.append(end);

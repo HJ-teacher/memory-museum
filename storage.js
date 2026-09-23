@@ -56,5 +56,19 @@ window.MuseumStore = (() => {
       r.onsuccess = () => resolve(r.result || null); r.onerror = () => reject(r.error);
     });
   }
-  return { read, write, list, room };
+  // 전시관 하나만 지웁니다. 지운 전시관이 마지막으로 연 전시관이면 ‘current’도 함께 비웁니다.
+  async function remove(id) {
+    const database = await open();
+    return new Promise((resolve, reject) => {
+      const tx = database.transaction('exhibitions', 'readwrite');
+      const records = tx.objectStore('exhibitions');
+      records.delete('room:' + id);
+      const index = records.get('rooms');
+      index.onsuccess = () => records.put((index.result || []).filter(r => r.id !== id), 'rooms');
+      const current = records.get('current');
+      current.onsuccess = () => { if (current.result?.id === id) records.delete('current'); };
+      tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); tx.onabort = () => reject(tx.error);
+    });
+  }
+  return { read, write, list, room, remove };
 })();

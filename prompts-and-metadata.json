@@ -38,6 +38,101 @@
       "generated": "built-in imagegen",
       "optimized_bytes": 173846,
       "prompt": "Photorealistic frontal Korean hanok wall, centered changho double doors with fine wood lattice and translucent hanji, honey brown timber beams, subtle green and rust red dancheong, cream hanji panels, warm light, no people or text."
+    },
+    {
+      "file": "rooms/palace-wall.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "tradition"
+    },
+    {
+      "file": "rooms/palace-frame.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "tradition"
+    },
+    {
+      "file": "rooms/palace-floor.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "tradition"
+    },
+    {
+      "file": "rooms/palace-ceiling.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "tradition"
+    },
+    {
+      "file": "rooms/palace-door.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "tradition"
+    },
+    {
+      "file": "rooms/palace-entry.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "tradition"
+    },
+    {
+      "file": "rooms/palace-exit.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "tradition"
+    },
+    {
+      "file": "rooms/euro-wall.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "art"
+    },
+    {
+      "file": "rooms/euro-frame.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "art"
+    },
+    {
+      "file": "rooms/euro-floor.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "art"
+    },
+    {
+      "file": "rooms/euro-ceiling.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "art"
+    },
+    {
+      "file": "rooms/euro-door.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "art"
+    },
+    {
+      "file": "rooms/euro-entry.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "art"
+    },
+    {
+      "file": "rooms/modern-wall.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "simple"
+    },
+    {
+      "file": "rooms/modern-frame.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "simple"
+    },
+    {
+      "file": "rooms/modern-floor.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "simple"
+    },
+    {
+      "file": "rooms/modern-ceiling.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "simple"
+    },
+    {
+      "file": "rooms/modern-door.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "simple"
+    },
+    {
+      "file": "rooms/modern-entry.jpg",
+      "generated": "Canva AI image generation",
+      "theme": "simple"
     }
   ]
 }
