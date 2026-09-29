@@ -15,3 +15,10 @@ dialog{border:1px solid var(--line);border-radius:16px;background:var(--surface)
 .topbar{height:auto;min-height:84px;padding-top:16px;padding-bottom:16px;flex-wrap:wrap;gap:12px}.topbar .brand{flex-wrap:wrap}.topbar .row{margin-left:auto}
 @media(max-width:760px){.topbar{min-height:74px}.gallery-tools .inline-label:has(input:disabled){opacity:.7}}
 @media(min-width:761px){.fit .frame{width:min(100%,var(--fit-frame-width));height:calc(100% - 24px)}}
+
+
+textarea { width:100%; padding:12px; font:inherit; border:1px solid #aaa; border-radius:8px; resize:vertical; }
+.work-description, .wall-description { white-space:pre-wrap; overflow-wrap:anywhere; }
+.wall-caption .wall-description { display:block; max-height:110px; overflow:auto; font-size:14px; line-height:1.4; }
+
+.artwork-modal .artwork-editor .view-image { height:30dvh; max-height:30dvh; margin-bottom:16px; }

@@ -31,9 +31,9 @@
     <div class="gallery-heading"><div><span class="eyebrow" id="themeLabel">기억 박물관</span><h1 id="galleryTitle"></h1><p id="progressText" aria-live="polite"></p></div><div class="row view-controls"><button id="galleryViewBtn" aria-pressed="true">전시관 걷기</button><button id="gridViewBtn" aria-pressed="false">작품 모아 보기</button><button id="fullscreenBtn">전체화면</button></div></div>
     <div class="progress-track"><div id="progressBar"></div></div>
     <section id="walkGallery" class="walk-gallery" aria-label="걸어 다니는 전시관">
-      <div id="museumViewport" class="museum-viewport" tabindex="0" aria-label="방향키 위아래로 걷고 왼쪽 오른쪽으로 둘러보세요. 작품을 누르면 크게 볼 수 있습니다."><div id="museumWorld" class="museum-world"></div></div>
+      <div id="museumViewport" class="museum-viewport" tabindex="0" aria-label="방향키 위아래로 걷고 왼쪽 오른쪽으로 둘러보세요. 작품을 한 번 누르면 정면으로 감상하고 두 번 누르면 편집합니다."><div id="museumWorld" class="museum-world"></div></div>
       <div class="room-top"><span class="room-label" id="roomPosition">전시관 입구</span><div class="room-actions"><select id="jumpToWall" aria-label="액자 번호로 바로 이동"><option value="">번호로 이동</option></select><button id="lastWallBtn">맨 뒤 액자</button><button id="entranceBtn">입구로</button><button id="exitRoomBtn">문으로 나가기</button></div></div>
-      <p class="walking-hint">방향키로 걷기 · 화면을 끌어 둘러보기 · 작품을 눌러 감상하기</p>
+      <p class="walking-hint">방향키로 걷기 · 화면을 끌어 둘러보기 · 한 번 눌러 감상 · 두 번 눌러 편집</p>
       <div class="walk-bottom"><div class="tour-controls"><button id="previousWall">← 이전 작품</button><button id="tourBtn" class="tour-main" aria-pressed="false">천천히 둘러보기</button><button id="nextWall">다음 작품 →</button></div><div class="walk-pad" aria-label="걷기 조작"><button data-walk="forward" aria-label="앞으로 걷기">↑<span>앞으로</span></button><button data-walk="left" aria-label="왼쪽으로 둘러보기">←<span>왼쪽</span></button><button data-walk="back" aria-label="뒤로 걷기">↓<span>뒤로</span></button><button data-walk="right" aria-label="오른쪽으로 둘러보기">→<span>오른쪽</span></button></div></div>
     </section>
     <div class="workspace" id="workspace">
@@ -62,8 +62,9 @@
 <dialog id="modal"><div class="modal-head"><h2 id="modalTitle"></h2><button id="closeModal" aria-label="닫기">닫기 ×</button></div><div id="modalBody"></div></dialog>
 <dialog id="cropDialog" aria-labelledby="cropTitle">
 <div class="modal-head"><h2 id="cropTitle">종이 모서리를 맞춰 주세요</h2><button id="cropCancel">취소 ×</button></div>
-<p id="cropHelp">네 점을 종이 모서리에 맞추면 배경을 자르고 반듯하게 펴 줘요.</p>
+<p id="cropHelp">네 점을 종이 모서리에 맞추면 배경을 자르고 반듯하게 펴 줘요. QR은 종이 옆에 놓으면 가장 깨끗하게 전시돼요.</p>
 <div class="crop-layout"><div id="cropStage" class="crop-stage"><canvas id="cropSource"></canvas><svg id="cropOutline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polygon></polygon></svg></div><div class="crop-result"><span>액자에 들어갈 작품</span><canvas id="cropPreview"></canvas></div></div>
 <div class="crop-actions"><button id="cropReset">사진 전체 선택</button><button id="cropRotate">↻ 오른쪽으로 회전</button><button id="cropSave" class="primary">종이만 잘라 전시하기</button></div></dialog>
 <div id="printArea"></div>
 </body></html>
+

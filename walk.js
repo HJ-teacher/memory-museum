@@ -6,6 +6,7 @@ window.MuseumWalk = (() => {
   const BAY = 1000, WIDTH = 1300, HEIGHT = 667;
   let data, getURL, onOpen, active = false, pending = -1, selected = -1;
   let camera = { x: 0, z: 430, yaw: 0, pitch: -2 }, target = { ...camera };
+  let clickTimer;
   let depth = 3000, tween, last = 0, tour = false, tourAt = 0, pointer, dragged = false;
   const keys = new Set(), reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -16,7 +17,7 @@ window.MuseumWalk = (() => {
     Object.assign(el.style, { width: w + 'px', height: h + 'px', left: -w / 2 + 'px', top: -h / 2 + 'px', transform }); return el;
   }
   function render(next, url, open) {
-    data = next; getURL = url; onOpen = open;
+    clearTimeout(clickTimer); data = next; getURL = url; onOpen = open;
     depth = Math.max(2, Math.ceil(data.settings.count / 2)) * BAY;
     const world = $('museumWorld'); world.replaceChildren();
     world.append(surface('museum-floor', WIDTH, depth + 1300, `translate3d(0,${HEIGHT / 2}px,${-depth / 2 + 450}px) rotateX(90deg)`));
@@ -32,12 +33,17 @@ window.MuseumWalk = (() => {
         el.dataset.wallSlot = slot;
         const painting = document.createElement('button'); painting.className = 'wall-painting'; painting.dataset.painting = slot;
         painting.setAttribute('aria-label', work ? `전시물 ${pad(slot)} 크게 보기` : `전시물 ${pad(slot)} 빈 액자`);
-        painting.tabIndex = -1;
+        painting.tabIndex = 0;
         if (work) { const img = document.createElement('img'); img.src = getURL(work); img.alt = `전시물 ${pad(slot)}`; img.draggable = false; painting.append(img); }
         else { const blank = document.createElement('span'); blank.className = 'wall-empty'; blank.textContent = pad(slot); painting.append(blank); }
         if (pending === slot) painting.classList.add('awaiting-hang');
-        painting.onclick = () => { if (dragged || pending >= 0) return; stopTour(); if (work) onOpen(slot); else focus(slot); };
-        const label = document.createElement('div'); label.className = 'wall-caption'; label.textContent = `전시물 ${pad(slot)}`; if (work?.name) { const name = document.createElement('span'); name.textContent = work.name; label.append(name); }
+
+        painting.onclick = () => { if (dragged || pending >= 0) return; clearTimeout(clickTimer); clickTimer = setTimeout(() => { stopTour(); focus(slot, 650); }, 450); };
+        painting.ondblclick = () => { clearTimeout(clickTimer); if (dragged || pending >= 0 || !work) return; stopTour(); onOpen(slot); };
+        painting.onkeydown = e => { if (e.key === 'F2' && work && pending < 0) { e.preventDefault(); onOpen(slot); } };
+        painting.title = '한 번 누르면 정면 감상 · 두 번 누르면 편집 (키보드 F2)';
+        const label = document.createElement('div'); label.className = 'wall-caption'; label.textContent = work?.title || `전시물 ${pad(slot)}`; if (work?.name) { const name = document.createElement('span'); name.textContent = work.name; label.append(name); }
+        if (data.settings.useDescription && work?.description) { const description = document.createElement('span'); description.className = 'wall-description'; description.textContent = work.description; label.append(description); }
         el.append(painting, label);
         const sizeFrame = (w,h) => { const scale = Math.min(520 / w, 380 / h); Object.assign(painting.style,{width:(w*scale+64)+'px',height:(h*scale+64)+'px'}); painting.dataset.orientation = h > w ? 'portrait' : 'landscape'; };
         sizeFrame(work?.width || 700,work?.height || 1000);
@@ -64,7 +70,7 @@ window.MuseumWalk = (() => {
   function setActive(value) { active = value; $('walkGallery').hidden = !value; document.body.classList.toggle('walk-mode', value); document.body.classList.toggle('grid-mode', !value); $('galleryViewBtn').setAttribute('aria-pressed', value); $('gridViewBtn').setAttribute('aria-pressed', !value); if (!value) stopTour(); draw(); }
   function draw() {
     if (!active) return;
-    const focal = Math.max(340, Math.min($('museumViewport').clientWidth * .68, 920));
+    const focal = Math.max(220, Math.min($('museumViewport').clientWidth * .68, $('museumViewport').clientHeight * 1.05, 920));
     $('museumViewport').style.perspective = focal + 'px';
     $('museumWorld').style.transform = `translateZ(${focal}px) rotateX(${camera.pitch}deg) rotateY(${camera.yaw}deg) translate3d(${-camera.x}px,0,${-camera.z}px)`;
   }
@@ -79,10 +85,10 @@ window.MuseumWalk = (() => {
     if (!data || slot < 0 || slot >= data.settings.count) return;
     selected = slot; updatePosition();
     const side = slot % 2 ? 1 : -1, bay = Math.floor(slot / 2);
-    await move({ x: -side * 30, z: -(bay + .5) * BAY + 65, yaw: side * 84.5, pitch: 0 }, duration);
+    await move({ x: -side * 180, z: -(bay + .5) * BAY, yaw: side * 90, pitch: 0 }, duration);
   }
   function stopTour() { tour = false; $('tourBtn').textContent = '천천히 둘러보기'; $('tourBtn').setAttribute('aria-pressed', 'false'); }
-  function stop() { stopTour(); stopTween(); pointer = null; keys.clear(); }
+  function stop() { clearTimeout(clickTimer); stopTour(); stopTween(); pointer = null; keys.clear(); }
   async function navigate(step) {
     if (pending >= 0 || !data) return;
     stopTour(); const slot = selected < 0 ? (step > 0 ? 0 : data.settings.count - 1) : (selected + step + data.settings.count) % data.settings.count; await focus(slot);
@@ -144,3 +150,4 @@ window.MuseumWalk = (() => {
   window.addEventListener('resize', draw); requestAnimationFrame(tick);
   return { render, setActive, prepareArrival, reveal, focus, stop, entrance, getState: () => ({ active, selected, pending, camera: { ...camera }, tour }) };
 })();
+

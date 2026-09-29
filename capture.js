@@ -19,28 +19,26 @@ window.MuseumCapture = (() => {
       try { output = MuseumAdvanced.documentCrop(c, settings.qrLocation); if (output) mode = '종이 자동 보정'; } catch { output = null; }
     }
     if (settings.review || !output) {
-      if (settings.review) {
-        const reviewed = await MuseumCrop.review(c);
-        if (!reviewed) return null;
-        output = reviewed;
-        mode = '종이 크롭 · 원근 보정';
-      } else {
-        output = crop(c, guide(video.videoWidth, video.videoHeight, settings.landscape));
-      }
+      const reviewed = await MuseumCrop.review(c);
+      if (!reviewed) return null;
+      output = reviewed; mode = '종이 크롭 · 원근 보정';
     }
-    if (settings.hideQR && window.MuseumAdvanced) { try { MuseumAdvanced.hideQR(output); } catch {} }
+    if (window.MuseumAdvanced) { try { MuseumAdvanced.hideQR(output); } catch {} }
     return { blob: await blob(output), mode };
   }
-  async function fromFile(file) {
+  async function fromFile(file, { autoCrop = false } = {}) {
     if (!file.type.startsWith('image/') || file.size > 30 * 1024 * 1024) throw new Error('invalid image');
     const url = URL.createObjectURL(file), img = new Image();
     try {
       img.src = url; await img.decode();
       if (img.naturalWidth * img.naturalHeight > 60000000) throw new Error('large image');
       const source = crop(img, { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight });
-      const output = await MuseumCrop.review(source);
+      const detected = autoCrop ? MuseumAdvanced.documentCrop(source) : null;
+      const output = detected || await MuseumCrop.review(source);
+      if (output) MuseumAdvanced.hideQR(output);
       return output ? { blob: await blob(output), mode: '사진 종이 보정' } : null;
     } finally { URL.revokeObjectURL(url); }
   }
   return { guide, make, blob, crop, fromVideo, fromFile };
 })();
+
