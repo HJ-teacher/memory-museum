@@ -123,13 +123,11 @@ $('setupForm').onsubmit = async e => {
 };
 $('resumeBtn').onclick = () => { if (state) { delete $('setupForm').dataset.confirmed; enterExhibition(); } };
 $('newBtn').onclick = () => newExhibition(false);
-// 촬영 버튼은 메뉴를 엽니다. ‘카메라 크게 보기’도 이 메뉴 안에 있어 촬영 기능이 한곳에 모입니다.
 function updateShootMenu() {
   const full = nextSlot() < 0, live = !!stream;
   $('shootBtn').classList.toggle('camera-live', live);
   $('shootStartItem').disabled = full || (busy && !live);
   $('shootStartNote').textContent = full ? '빈 칸이 없어요. 작품 수를 늘리거나 작품을 삭제해 주세요.' : live ? '켜져 있는 카메라 화면을 크게 열어 촬영해요.' : '카메라를 켜고 큰 화면에서 작품을 촬영해요.';
-  $('captureViewNote').textContent = live ? '숨겨 둔 카메라 화면을 다시 크게 봐요. 자동 촬영은 계속돼요.' : '카메라는 꺼 둔 채 카메라 화면과 설정만 열어요.';
   $('shootStopItem').disabled = !live;
 }
 function closeShootMenu() { if ($('shootMenu').hidden) return; $('shootMenu').hidden = true; $('shootBtn').setAttribute('aria-expanded', 'false'); }
@@ -153,7 +151,7 @@ document.addEventListener('keydown', e => {
 window.addEventListener('resize', closeShootMenu);
 $('lobbyBtn').onclick = leaveExhibition; $('exitRoomBtn').onclick = leaveExhibition;
 window.addEventListener('museum-exit', leaveExhibition);
-$('captureViewBtn').onclick = () => { closeShootMenu(); showCapture(true); }; $('closeCameraPanel').onclick = () => showCapture(false);
+$('closeCameraPanel').onclick = () => showCapture(false);
 $('galleryViewBtn').onclick = () => { showCapture(false); MuseumWalk.setActive(true); };
 $('gridViewBtn').onclick = () => { showCapture(false); MuseumWalk.setActive(false); requestAnimationFrame(fitLayout); };
 $('fullscreenBtn').onclick = async () => {
