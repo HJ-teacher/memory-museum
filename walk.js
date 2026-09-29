@@ -43,7 +43,7 @@ window.MuseumWalk = (() => {
         painting.onkeydown = e => { if (e.key === 'F2' && work && pending < 0) { e.preventDefault(); onOpen(slot); } };
         painting.title = '한 번 누르면 정면 감상 · 두 번 누르면 편집 (키보드 F2)';
         const label = document.createElement('div'); label.className = 'wall-caption'; label.textContent = work?.title || `전시물 ${pad(slot)}`; if (work?.name) { const name = document.createElement('span'); name.textContent = work.name; label.append(name); }
-        if (data.settings.useDescription && work?.description) { const description = document.createElement('span'); description.className = 'wall-description'; description.textContent = work.description; label.append(description); }
+        if (work?.description) { const description = document.createElement('span'); description.className = 'wall-description'; description.textContent = work.description; label.append(description); }
         el.append(painting, label);
         const sizeFrame = (w,h) => { const scale = Math.min(520 / w, 380 / h); Object.assign(painting.style,{width:(w*scale+64)+'px',height:(h*scale+64)+'px'}); painting.dataset.orientation = h > w ? 'portrait' : 'landscape'; };
         sizeFrame(work?.width || 700,work?.height || 1000);
