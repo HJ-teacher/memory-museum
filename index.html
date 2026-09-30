@@ -34,7 +34,7 @@
       <div id="museumViewport" class="museum-viewport" tabindex="0" aria-label="방향키 위아래로 걷고 왼쪽 오른쪽으로 둘러보세요. 작품을 한 번 누르면 정면으로 감상하고 두 번 누르면 편집합니다."><div id="museumWorld" class="museum-world"></div></div>
       <div class="room-top"><span class="room-label" id="roomPosition">전시관 입구</span><div class="room-actions"><select id="jumpToWall" aria-label="액자 번호로 바로 이동"><option value="">번호로 이동</option></select><button id="lastWallBtn">맨 뒤 액자</button><button id="entranceBtn">입구로</button><button id="exitRoomBtn">문으로 나가기</button></div></div>
       <p class="walking-hint">방향키로 걷기 · 화면을 끌어 둘러보기 · 한 번 눌러 감상 · 두 번 눌러 편집</p>
-      <div class="walk-bottom"><div class="tour-controls"><button id="previousWall">← 이전 작품</button><button id="tourBtn" class="tour-main" aria-pressed="false">천천히 둘러보기</button><button id="nextWall">다음 작품 →</button></div><div class="walk-pad" aria-label="걷기 조작"><button data-walk="forward" aria-label="앞으로 걷기">↑<span>앞으로</span></button><button data-walk="left" aria-label="왼쪽으로 둘러보기">←<span>왼쪽</span></button><button data-walk="back" aria-label="뒤로 걷기">↓<span>뒤로</span></button><button data-walk="right" aria-label="오른쪽으로 둘러보기">→<span>오른쪽</span></button></div></div>
+      <div class="walk-bottom"><div class="tour-controls"><button id="previousWall">← 이전 작품</button><button id="tourBtn" class="tour-main" aria-pressed="false">천천히 둘러보기</button><button id="nextWall">다음 작품 →</button></div><div class="zoom-controls" aria-label="확대 조작"><button id="zoomInBtn" type="button" aria-label="가까이 다가가기">＋<span>다가가기</span></button><button id="zoomOutBtn" type="button" aria-label="뒤로 물러나기">－<span>물러나기</span></button></div><div class="walk-pad" aria-label="걷기 조작"><button data-walk="forward" aria-label="앞으로 걷기">↑<span>앞으로</span></button><button data-walk="left" aria-label="왼쪽으로 둘러보기">←<span>왼쪽</span></button><button data-walk="back" aria-label="뒤로 걷기">↓<span>뒤로</span></button><button data-walk="right" aria-label="오른쪽으로 둘러보기">→<span>오른쪽</span></button></div></div>
     </section>
     <div class="workspace" id="workspace">
       <aside id="cameraPanel" class="camera-panel">
@@ -52,6 +52,11 @@
     <div id="shootMenu" class="shoot-menu" role="menu" aria-label="촬영 메뉴" hidden>
       <button id="shootStartItem" role="menuitem"><strong>카메라로 촬영하기</strong><span id="shootStartNote">카메라를 켜고 큰 화면에서 작품을 촬영해요.</span></button>
       <button id="shootStopItem" role="menuitem"><strong>카메라 끄기</strong><span>자동 촬영도 함께 멈춰요.</span></button>
+    </div>
+    <div id="liveMonitor" class="live-monitor" hidden>
+      <div class="live-screen"><video id="miniVideo" autoplay playsinline muted></video><div id="miniCountdown" class="mini-countdown" aria-hidden="true"></div></div>
+      <div class="live-status" role="status" aria-live="polite"><strong id="liveTitle">자동 게시 준비 중</strong><span id="liveNote">QR을 카메라에 비추면 바로 전시돼요.</span></div>
+      <button id="liveStartBtn" type="button" hidden>카메라 켜기</button>
     </div>
     <input type="file" id="fileInput" accept="image/*" multiple hidden>
   </section>

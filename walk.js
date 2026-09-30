@@ -81,11 +81,25 @@ window.MuseumWalk = (() => {
     if (reduced()) { camera = { ...target }; draw(); return Promise.resolve(); }
     return new Promise(resolve => { tween = { from: { ...camera }, to: { ...to }, started: performance.now(), duration, resolve }; });
   }
+  // 액자가 화면을 거의 채우도록 벽 앞까지 다가갈 거리를 계산합니다.
+  function viewDistance(slot) {
+    const painting = document.querySelector(`[data-painting="${slot}"]`), viewport = $('museumViewport');
+    const focal = parseFloat(viewport.style.perspective) || 800, vw = viewport.clientWidth || 1000, vh = viewport.clientHeight || 600;
+    const w = painting?.offsetWidth || 584, h = painting?.offsetHeight || 444;
+    return clamp(Math.max(focal * h / (vh * .8), focal * w / (vw * .88)), 140, 820);
+  }
   async function focus(slot, duration = 1600) {
     if (!data || slot < 0 || slot >= data.settings.count) return;
     selected = slot; updatePosition();
     const side = slot % 2 ? 1 : -1, bay = Math.floor(slot / 2);
-    await move({ x: -side * 180, z: -(bay + .5) * BAY, yaw: side * 90, pitch: 0 }, duration);
+    await move({ x: side * (WIDTH / 2 - viewDistance(slot)), z: -(bay + .5) * BAY, yaw: side * 90, pitch: 0 }, duration);
+  }
+  // 바라보는 방향으로 앞뒤로 다가가거나 물러납니다. (마우스 휠, ＋/－ 버튼, 키보드 +/-)
+  function dolly(amount) {
+    if (!data || pending >= 0) return;
+    stopTour(); stopTween(); const yaw = target.yaw * Math.PI / 180;
+    target.x = clamp(target.x + Math.sin(yaw) * amount, -560, 560);
+    target.z = clamp(target.z - Math.cos(yaw) * amount, -depth + 150, 500);
   }
   function stopTour() { tour = false; $('tourBtn').textContent = '천천히 둘러보기'; $('tourBtn').setAttribute('aria-pressed', 'false'); }
   function stop() { clearTimeout(clickTimer); stopTour(); stopTween(); pointer = null; keys.clear(); }
@@ -125,7 +139,7 @@ window.MuseumWalk = (() => {
           if (keys.has('back')) { target.x -= Math.sin(yaw) * step; target.z += Math.cos(yaw) * step; }
           if (keys.has('left')) target.yaw -= 65 * dt;
           if (keys.has('right')) target.yaw += 65 * dt;
-          target.x = clamp(target.x, -420, 420); target.z = clamp(target.z, -depth + 380, 500); target.yaw = clamp(target.yaw, -170, 170);
+          target.x = clamp(target.x, -560, 560); target.z = clamp(target.z, -depth + 150, 500); target.yaw = clamp(target.yaw, -170, 170);
         }
         const smooth = reduced() ? 1 : 1 - Math.exp(-dt * 10); for (const k of ['x', 'z', 'yaw', 'pitch']) camera[k] += (target[k] - camera[k]) * smooth;
       }
@@ -137,6 +151,10 @@ window.MuseumWalk = (() => {
   const mapping = { ArrowUp: 'forward', w: 'forward', W: 'forward', ArrowDown: 'back', s: 'back', S: 'back', ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right' };
   document.addEventListener('keydown', e => { if (!interactive() || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || !mapping[e.key]) return; e.preventDefault(); stopTween(); keys.add(mapping[e.key]); });
   document.addEventListener('keyup', e => { if (mapping[e.key]) keys.delete(mapping[e.key]); });
+  document.addEventListener('keydown', e => { if (!interactive() || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return; if (e.key === '+' || e.key === '=') { e.preventDefault(); dolly(180); } if (e.key === '-' || e.key === '_') { e.preventDefault(); dolly(-180); } });
+  $('museumViewport').addEventListener('wheel', e => { if (!interactive()) return; e.preventDefault(); dolly(-Math.sign(e.deltaY) * 140); }, { passive: false });
+  $('zoomInBtn').onclick = () => { if (interactive()) dolly(220); };
+  $('zoomOutBtn').onclick = () => { if (interactive()) dolly(-220); };
   window.addEventListener('blur', () => keys.clear()); document.addEventListener('visibilitychange', () => { keys.clear(); tourAt = performance.now() + 3000; });
   $('museumViewport').addEventListener('pointerdown', e => { if (!interactive()) return; dragged = false; pointer = { x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, yaw: target.yaw, pitch: target.pitch }; });
   window.addEventListener('pointermove', e => { if (!pointer || !interactive()) return; const dx = e.clientX - pointer.x, dy = e.clientY - pointer.y; if (Math.abs(dx) + Math.abs(dy) > 5) { dragged = true; stopTour(); stopTween(); } target.yaw = clamp(pointer.yaw - dx * .13, -170, 170); target.pitch = clamp(pointer.pitch + dy * .09, -22, 22); });
@@ -148,6 +166,6 @@ window.MuseumWalk = (() => {
   $('jumpToWall').onchange = () => { if (pending >= 0 || !data || $('jumpToWall').value === '') return; const slot = Number($('jumpToWall').value); stopTour(); focus(slot, 650); };
   $('tourBtn').onclick = () => { if (pending >= 0) return; if (tour) return stopTour(); tour = true; tourAt = 0; $('tourBtn').textContent = '산책 멈추기'; $('tourBtn').setAttribute('aria-pressed', 'true'); };
   window.addEventListener('resize', draw); requestAnimationFrame(tick);
-  return { render, setActive, prepareArrival, reveal, focus, stop, entrance, getState: () => ({ active, selected, pending, camera: { ...camera }, tour }) };
+  return { render, setActive, prepareArrival, reveal, focus, dolly, stop, entrance, getState: () => ({ active, selected, pending, camera: { ...camera }, tour }) };
 })();
 

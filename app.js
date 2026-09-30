@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const THEMES = { museum: '클래식 박물관', art: '유럽 궁전 미술관', simple: '현대 미술관', tradition: '조선 궁궐관' };
 const THEME_NOTES = { museum: '아이보리 벽·금빛 액자·마루', art: '붉은 벽·바로크 금박 액자·대리석', simple: '어두운 벽·스포트라이트·콘크리트', tradition: '단청·붉은 기둥·족자·일월오봉도' };
 const THEME_PREVIEWS = { museum: 'museum-entry.png', art: 'rooms/euro-entry.jpg', simple: 'rooms/modern-entry.jpg', tradition: 'rooms/palace-entry.jpg' };
-const DEFAULTS = { title: '우리 반 기억 박물관', count: 24, theme: 'museum', device: '', auto: true, sound: false, askTitle: false, askAuthor: false, askDescription: false, landscape: false, fit: false, autoDocument: true, hideQR: true };
+const DEFAULTS = { title: '우리 반 기억 박물관', count: 24, theme: 'museum', device: '', auto: true, sound: false, askTitle: false, askAuthor: false, askDescription: false, landscape: false, fit: false, autoDocument: true, hideQR: true, kiosk: true };
 let state = null;
 function themeChoices(container, group, current) {
   container.replaceChildren();
@@ -34,6 +34,36 @@ const occupied = () => state ? state.works.filter(Boolean).length : 0;
 const nextSlot = () => state ? state.works.findIndex(w => !w) : -1;
 function toast(message) { clearTimeout(toastTimer); $('toast').textContent = message; $('toast').hidden = false; toastTimer = setTimeout(() => { $('toast').hidden = true; }, 5500); }
 function status(message) { $('captureStatus').textContent = message; }
+// 자동 게시 모드: 카메라를 계속 켜 두고, QR을 비추면 클릭 없이 촬영·전시합니다.
+let kioskPaused = false, lastCameraError = '', wakeLock = null, liveTimer;
+const kioskOn = () => !!state && ready && state.settings.kiosk !== false && state.settings.auto !== false && !kioskPaused;
+function setCountdown(text) { $('countdown').textContent = text; $('miniCountdown').textContent = text; }
+function live(title, note, mode = 'idle') {
+  $('liveTitle').textContent = title; $('liveNote').textContent = note; $('liveMonitor').dataset.mode = mode;
+}
+function liveReady() {
+  if (!state) return;
+  const slot = nextSlot();
+  if (slot < 0) live('전시관이 가득 찼어요', '설정에서 작품 수를 늘리면 계속 전시할 수 있어요.', 'full');
+  else live('QR을 비춰 주세요', `활동지의 QR이 보이면 자동으로 찍어 ${number(slot)}번 액자에 걸어요.`, 'idle');
+}
+function updateLiveMonitor() {
+  const show = kioskOn() && !$('exhibition').hidden;
+  $('liveMonitor').hidden = !show;
+  $('liveStartBtn').hidden = !show || !!stream;
+  if (show && !stream && !$('liveMonitor').dataset.mode?.startsWith('error')) live('카메라를 켜는 중', '잠시만 기다려 주세요.', 'wait');
+  if (show && stream) requestWakeLock(); else releaseWakeLock();
+}
+async function requestWakeLock() { try { if (!wakeLock && navigator.wakeLock && !document.hidden) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch { wakeLock = null; } }
+function releaseWakeLock() { try { wakeLock?.release(); } catch {} wakeLock = null; }
+async function ensureKioskCamera() {
+  if (!kioskOn() || stream || busy || $('exhibition').hidden) { updateLiveMonitor(); return; }
+  updateLiveMonitor(); await startCamera(); updateLiveMonitor();
+  if (!stream) live('카메라를 켜지 못했어요', lastCameraError || '카메라 연결을 확인해 주세요. 아래 버튼을 한 번 누르면 다시 시도해요.', 'error');
+  else liveReady();
+}
+// 카메라가 잠깐 끊겨도 권한이 있으면 저절로 다시 켭니다.
+setInterval(() => { if (kioskOn() && !stream && !busy && !document.hidden && !$('exhibition').hidden && lastCameraError !== 'NotAllowedError') ensureKioskCamera(); }, 6000);
 function failSave() { $('saveStatus').textContent = '저장하지 못했습니다. 기존 작품은 유지됩니다. 기기 저장 공간과 브라우저 설정을 확인해 주세요.'; $('saveStatus').classList.add('save-error'); toast('저장하지 못했어요. 저장 공간을 확보한 뒤 다시 시도해 주세요.'); }
 async function commit(candidate) {
   try { await MuseumStore.write(candidate); state = candidate; $('saveStatus').textContent = '저장 완료 · 작품은 이 기기의 브라우저에만 저장됩니다.'; $('saveStatus').classList.remove('save-error'); return true; }
@@ -77,7 +107,7 @@ function fitLayout() {
   }
   const g = $('gallery'); g.style.setProperty('--cols', best.cols); g.style.setProperty('--rows', best.rows); g.style.setProperty('--fit-height', available + 'px'); g.style.setProperty('--fit-frame-width', Math.min((width - (best.cols - 1) * 14) / best.cols, ((available - (best.rows - 1) * 14) / best.rows - 24) * .8) + 'px');
 }
-function enterExhibition() { ready = true; document.body.classList.add('inside-museum'); $('welcome').hidden = true; $('exhibition').hidden = false; $('settingsBtn').hidden = false; showCapture(false); render(); MuseumWalk.setActive(true); }
+function enterExhibition() { ready = true; kioskPaused = false; document.body.classList.add('inside-museum'); $('welcome').hidden = true; $('exhibition').hidden = false; $('settingsBtn').hidden = false; showCapture(false); render(); MuseumWalk.setActive(true); ensureKioskCamera(); }
 function showCapture(show) { document.body.classList.toggle('camera-open', show); closeShootMenu(); if (show) MuseumWalk.stop(); $('cameraPanel').hidden = !show; $('workspace').classList.toggle('gallery-only', !show); requestAnimationFrame(fitLayout); }
 // 이미 열린 창의 내용만 교체합니다. close() 직후 다시 열면 지연된 close 이벤트가
 // 새 삭제 확인을 취소한 것으로 처리되는 문제가 있어 닫았다 열지 않습니다.
@@ -140,8 +170,8 @@ function openShootMenu() {
   menu.querySelector('button:not(:disabled)')?.focus();
 }
 $('shootBtn').onclick = e => { e.stopPropagation(); if ($('shootMenu').hidden) openShootMenu(); else closeShootMenu(); };
-$('shootStartItem').onclick = async () => { closeShootMenu(); if (nextSlot() < 0) return; showCapture(true); if (!stream && !busy) await startCamera(); };
-$('shootStopItem').onclick = () => { closeShootMenu(); if (busy) { toast('촬영이 끝난 뒤 카메라를 끌 수 있어요.'); return; } stopCamera(); status('카메라를 껐어요. 사진으로 작품을 추가할 수 있습니다.'); toast('카메라를 껐어요.'); };
+$('shootStartItem').onclick = async () => { closeShootMenu(); if (nextSlot() < 0) return; kioskPaused = false; showCapture(true); if (!stream && !busy) await startCamera(); updateLiveMonitor(); };
+$('shootStopItem').onclick = () => { closeShootMenu(); if (busy) { toast('촬영이 끝난 뒤 카메라를 끌 수 있어요.'); return; } kioskPaused = true; stopCamera(); status('카메라를 껐어요. 사진으로 작품을 추가할 수 있습니다.'); toast('카메라를 껐어요. 자동 게시는 ‘카메라로 촬영하기’로 다시 켤 수 있어요.'); };
 document.addEventListener('click', e => { if (!$('shootMenu').hidden && !$('shootMenu').contains(e.target) && e.target !== $('shootBtn')) closeShootMenu(); });
 document.addEventListener('keydown', e => {
   if ($('shootMenu').hidden) return;
@@ -185,7 +215,7 @@ function stopCamera() {
   cameraRequest++; cancelCapture++; clearTimeout(scanTimer);
   if (stream) stream.getTracks().forEach(track => track.stop());
   stream = null; $('video').srcObject = null; $('videoStage').classList.remove('active'); $('cameraPlaceholder').hidden = false;
-  $('cameraBadge').textContent = '카메라 꺼짐'; $('countdown').textContent = ''; updateBusy();
+  $('cameraBadge').textContent = '카메라 꺼짐'; setCountdown(''); $('miniVideo').srcObject = null; updateBusy(); updateLiveMonitor();
 }
 async function startCamera() {
   if (busy) return;
@@ -198,12 +228,13 @@ async function startCamera() {
     const cameraChoice = selected.startsWith('@') ? { facingMode: { ideal: selected.slice(1) } } : selected ? { deviceId: { exact: selected } } : {};
     const media = await navigator.mediaDevices.getUserMedia({ audio: false, video: { ...cameraChoice, width: { ideal: 1920 }, height: { ideal: 1080 } } });
     if (token !== cameraRequest) { media.getTracks().forEach(t => t.stop()); return; }
-    stream = media; $('video').srcObject = media; await $('video').play();
+    stream = media; $('video').srcObject = media; await $('video').play(); lastCameraError = '';
+    $('miniVideo').srcObject = media; $('miniVideo').play().catch(() => {});
     if (token !== cameraRequest) return;
     $('videoStage').classList.add('active'); $('cameraPlaceholder').hidden = true; $('cameraBadge').textContent = media.getVideoTracks()[0].label || '카메라 연결됨';
-    media.getVideoTracks()[0].addEventListener('ended', () => { if (stream === media) { stopCamera(); status('카메라 연결이 끊겼어요. 연결 후 다시 시작해 주세요.'); } });
-    await deviceList(); updateGuide(); updateBusy(); status('화면 전체에서 QR을 찾고 있어요. 종이 네 모서리와 QR만 화면 안에 보이면 됩니다.'); scan();
-  } catch (error) { if (token === cameraRequest) { stopCamera(); status(cameraError(error)); } }
+    media.getVideoTracks()[0].addEventListener('ended', () => { if (stream === media) { stopCamera(); status('카메라 연결이 끊겼어요. 연결 후 다시 시작해 주세요.'); if (kioskOn()) live('카메라 연결이 끊겼어요', '다시 연결되면 저절로 켜져요.', 'error'); } });
+    await deviceList(); updateGuide(); updateBusy(); status('화면 전체에서 QR을 찾고 있어요. 종이 네 모서리와 QR만 화면 안에 보이면 됩니다.'); updateLiveMonitor(); liveReady(); scan();
+  } catch (error) { if (token === cameraRequest) { stopCamera(); lastCameraError = error?.name === 'NotAllowedError' ? 'NotAllowedError' : ''; status(cameraError(error)); if (kioskOn()) live('카메라를 켜지 못했어요', cameraError(error), 'error'); } }
   finally { $('startCamera').disabled = false; }
 }
 $('discoverCamera').onclick = async () => {
@@ -240,8 +271,9 @@ function scan() {
       if (qr && armed && state.settings.auto && !busy && !togglePending && !$('modal').open && ready) {
         const slot = MuseumQR.slotFor(qr.data, state.settings.count, state.works);
         if (slot >= 0) capture(slot, qr.data);
-        else if (slot === -3) status('이 번호의 칸에는 이미 작품이 있어요. 다른 번호 QR을 사용해 주세요.');
-        else if (slot === -4) status('전시 칸 수보다 큰 번호예요. 설정에서 작품 수를 늘려 주세요.');
+        else if (slot === -3) { status('이 번호의 칸에는 이미 작품이 있어요. 다른 번호 QR을 사용해 주세요.'); live('이미 작품이 있는 번호예요', '다른 번호 QR을 비춰 주세요.', 'warn'); }
+        else if (slot === -4) { status('전시 칸 수보다 큰 번호예요. 설정에서 작품 수를 늘려 주세요.'); live('없는 번호예요', '설정에서 작품 수를 늘려 주세요.', 'warn'); }
+        else if (slot === -1) liveReady();
       }
     }
   } catch { status('QR을 읽기 어려워요. 조명을 조절하거나 수동 촬영을 사용해 주세요.'); }
@@ -250,23 +282,24 @@ function scan() {
 async function capture(slot, qrText = null) {
   if (busy || !stream || slot < 0 || state.works[slot]) return;
   busy = true; updateBusy(); const token = ++cancelCapture;
-  $('guide').classList.add('found'); status(qrText ? '작품을 찾았어요! 잠시 그대로 두세요.' : '잠시 그대로 두세요. 곧 촬영해요.');
+  $('guide').classList.add('found'); status(qrText ? '작품을 찾았어요! 잠시 그대로 두세요.' : '잠시 그대로 두세요. 곧 촬영해요.'); live('작품을 찾았어요!', `움직이지 말고 그대로 들고 있어요 · ${number(slot)}번 액자`, 'found');
   try {
-    for (let n = 3; n >= 1; n--) {
-      $('countdown').textContent = n;
+    for (let n = 2; n >= 1; n--) {
+      setCountdown(n);
       for (let step = 0; step < 5; step++) {
         await sleep(200);
-        if (token !== cancelCapture || !stream || document.hidden || (qrText && (performance.now() - lastSeen > 850 || (lastQR && lastQR !== qrText)))) { status('촬영을 멈췄어요. 작품과 QR을 다시 맞춰 주세요.'); return; }
+        if (token !== cancelCapture || !stream || document.hidden || (qrText && (performance.now() - lastSeen > 850 || (lastQR && lastQR !== qrText)))) { status('촬영을 멈췄어요. 작품과 QR을 다시 맞춰 주세요.'); live('다시 비춰 주세요', 'QR이 화면에서 벗어났어요. 활동지를 카메라 앞에 가만히 들어 주세요.', 'warn'); return; }
       }
     }
-    $('countdown').textContent = '찰칵!'; gate.lock(performance.now());
+    setCountdown('찰칵!'); gate.lock(performance.now());
     const result = await MuseumCapture.fromVideo($('video'), { ...state.settings, review: false });
     $('videoShell').classList.add('flash'); setTimeout(() => $('videoShell').classList.remove('flash'), 350);
     if (!result) { status('촬영을 취소했어요. 다시 촬영할 수 있습니다.'); return; }
-    const saved = await register(result.blob, slot);
+    const saved = await register(result.blob, slot, { auto: !!qrText });
+    if (saved && qrText) { live('전시했어요!', `${number(slot)}번 액자에 걸었어요. 활동지를 치우면 다음 친구 차례예요.`, 'done'); clearTimeout(liveTimer); liveTimer = setTimeout(() => { if (!busy && stream) liveReady(); }, 5200); }
     status(saved ? '촬영했어요 (' + result.mode + '). 작품을 치우고 다음 작품을 올려 주세요.' : '저장하지 못했어요. 저장 공간을 확인한 후 다시 촬영해 주세요.');
   } catch { toast('촬영을 완료하지 못했어요. 다시 촬영하거나 사진으로 작품을 추가해 주세요.'); }
-  finally { $('countdown').textContent = ''; $('guide').classList.remove('found'); busy = false; updateBusy(); }
+  finally { setCountdown(''); $('guide').classList.remove('found'); busy = false; updateBusy(); }
 }
 $('manualBtn').onclick = () => capture(nextSlot());
 let togglePending = false;
@@ -284,7 +317,7 @@ function chime() {
   if (!state.settings.sound) return;
   try { audioContext ||= new (window.AudioContext || window.webkitAudioContext)(); const o = audioContext.createOscillator(), g = audioContext.createGain(); o.connect(g); g.connect(audioContext.destination); o.frequency.value = 660; g.gain.setValueAtTime(.07, audioContext.currentTime); g.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + .25); o.start(); o.stop(audioContext.currentTime + .25); } catch { /* 효과음 실패는 등록을 막지 않습니다. */ }
 }
-async function register(blob, slot, { immediate = false } = {}) {
+async function register(blob, slot, { immediate = false, auto = false } = {}) {
   if (slot < 0 || state.works[slot]) return false;
   const image = await createImageBitmap(blob); const width = image.width, height = image.height; image.close();
   const work = { width, height, id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`, blob, name: '', title: '', description: '', createdAt: Date.now() };
@@ -292,6 +325,8 @@ async function register(blob, slot, { immediate = false } = {}) {
   if (!(await commit({ ...state, works }))) return false;
   if (immediate) { render(); return true; }
   showCapture(false); render(); chime();
+  // 자동 게시(QR)에서는 교사가 클릭하지 않아도 되도록 입력 창을 띄우지 않고, 새 작품 앞으로 다가가 보여 줍니다.
+  if (auto && kioskOn()) { MuseumWalk.focus(slot, 1400); return true; }
   if (state.settings.askTitle || state.settings.askAuthor || state.settings.askDescription) await editArtwork(slot, true);
   return true;
 }
@@ -360,24 +395,25 @@ $('helpBtn').onclick = () => openModal('작품을 전시하는 방법', '<ol cla
 $('settingsBtn').onclick = () => {
   if (busy) { toast('작품 등록이 끝나면 설정을 바꿀 수 있어요.'); return; }
   const s = state.settings, highest = state.works.reduce((max, w, i) => w ? i + 1 : max, 1);
-  openModal('전시관 설정', '<form id="settingsForm"><label for="settingTitle">전시관 이름</label><input id="settingTitle" maxlength="60" required><label for="settingCount">작품 칸 수</label><input id="settingCount" type="number" max="40" required><p id="countHelp" class="small"></p><fieldset class="theme-field"><legend>전시관 분위기</legend><div id="settingThemes" class="theme-choices"></div></fieldset><label for="settingCamera">카메라 선택</label><select id="settingCamera"></select><label class="inline-label"><input id="settingAuto" type="checkbox">자동 촬영</label><label class="inline-label"><input id="settingSound" type="checkbox">등록 효과음</label><fieldset><legend>촬영 후 입력할 작품 정보 (선택)</legend><p class="small">모두 끄면 자동 크롭 후 입력 대기 없이 바로 전시합니다. 사진 일괄 업로드는 항상 바로 등록되며, 액자를 두 번 누르면 세 항목을 나중에 편집할 수 있어요.</p><label class="inline-label"><input id="settingWorkTitle" type="checkbox">작품 제목 적기</label><label class="inline-label"><input id="settingAuthor" type="checkbox">작가 이름 적기</label><label class="inline-label"><input id="settingDescription" type="checkbox">작품 설명 적기</label></fieldset><label class="inline-label"><input id="settingLandscape" type="checkbox">가로 작품용 촬영 가이드</label><div id="advancedSettings"></div><p class="small">작품은 이 기기의 브라우저에만 저장됩니다.<br>브라우저의 사이트 데이터를 지우면 작품도 삭제됩니다.</p><div class="row"><button type="submit" class="primary">설정 저장</button></div></form><div class="settings-danger"><p>이 전시관과 안에 걸린 작품을 모두 지워요. 다른 전시관은 그대로 남아요.</p><button type="button" id="deleteRoomBtn">이 전시관 삭제</button></div>');
+  openModal('전시관 설정', '<form id="settingsForm"><label for="settingTitle">전시관 이름</label><input id="settingTitle" maxlength="60" required><label for="settingCount">작품 칸 수</label><input id="settingCount" type="number" max="40" required><p id="countHelp" class="small"></p><fieldset class="theme-field"><legend>전시관 분위기</legend><div id="settingThemes" class="theme-choices"></div></fieldset><label for="settingCamera">카메라 선택</label><select id="settingCamera"></select><label class="inline-label"><input id="settingAuto" type="checkbox">자동 촬영</label><label class="inline-label"><input id="settingKiosk" type="checkbox">자동 게시 모드 · 카메라를 항상 켜 두고 QR을 비추면 클릭 없이 바로 전시</label><label class="inline-label"><input id="settingSound" type="checkbox">등록 효과음</label><fieldset><legend>촬영 후 입력할 작품 정보 (선택)</legend><p class="small">모두 끄면 자동 크롭 후 입력 대기 없이 바로 전시합니다. 사진 일괄 업로드는 항상 바로 등록되며, 액자를 두 번 누르면 세 항목을 나중에 편집할 수 있어요.</p><label class="inline-label"><input id="settingWorkTitle" type="checkbox">작품 제목 적기</label><label class="inline-label"><input id="settingAuthor" type="checkbox">작가 이름 적기</label><label class="inline-label"><input id="settingDescription" type="checkbox">작품 설명 적기</label></fieldset><label class="inline-label"><input id="settingLandscape" type="checkbox">가로 작품용 촬영 가이드</label><div id="advancedSettings"></div><p class="small">작품은 이 기기의 브라우저에만 저장됩니다.<br>브라우저의 사이트 데이터를 지우면 작품도 삭제됩니다.</p><div class="row"><button type="submit" class="primary">설정 저장</button></div></form><div class="settings-danger"><p>이 전시관과 안에 걸린 작품을 모두 지워요. 다른 전시관은 그대로 남아요.</p><button type="button" id="deleteRoomBtn">이 전시관 삭제</button></div>');
   $('deleteRoomBtn').onclick = () => deleteRoom({ id: state.id, title: s.title, occupied: occupied() });
   $('settingTitle').value = s.title; $('settingCount').value = s.count; $('settingCount').min = highest;
   $('countHelp').textContent = `빈 자리를 유지하기 위해 마지막 작품이 있는 ${highest}번 칸까지는 남겨 두어요.`;
   themeChoices($('settingThemes'), 'settingTheme', s.theme);
-  $('settingAuto').checked = s.auto; $('settingSound').checked = s.sound; $('settingWorkTitle').checked = !!s.askTitle; $('settingAuthor').checked = !!s.askAuthor; $('settingDescription').checked = !!s.askDescription; $('settingLandscape').checked = s.landscape;
+  $('settingAuto').checked = s.auto; $('settingKiosk').checked = s.kiosk !== false; $('settingSound').checked = s.sound; $('settingWorkTitle').checked = !!s.askTitle; $('settingAuthor').checked = !!s.askAuthor; $('settingDescription').checked = !!s.askDescription; $('settingLandscape').checked = s.landscape;
   $('settingCamera').replaceChildren(...[...$('cameraSelect').options].map(o => o.cloneNode(true))); $('settingCamera').value = s.device;
   deviceList().catch(() => {});
   if (window.MuseumAdvanced) MuseumAdvanced.settingsUI(s);
   $('settingsForm').onsubmit = async e => {
     e.preventDefault(); if (busy) return;
     const title = $('settingTitle').value.trim(), count = Number($('settingCount').value); if (!title || !Number.isInteger(count) || count < highest || count > 40) { toast('전시관 이름과 작품 수를 확인해 주세요.'); return; }
-    const settings = { ...s, title, count, theme: document.querySelector('[name=settingTheme]:checked').value, device: $('settingCamera').value, auto: $('settingAuto').checked, sound: $('settingSound').checked, askTitle: $('settingWorkTitle').checked, askAuthor: $('settingAuthor').checked, askDescription: $('settingDescription').checked, landscape: $('settingLandscape').checked, ...(window.MuseumAdvanced ? MuseumAdvanced.settingsValues() : {}) };
+    const settings = { ...s, title, count, theme: document.querySelector('[name=settingTheme]:checked').value, device: $('settingCamera').value, auto: $('settingAuto').checked, kiosk: $('settingKiosk').checked, sound: $('settingSound').checked, askTitle: $('settingWorkTitle').checked, askAuthor: $('settingAuthor').checked, askDescription: $('settingDescription').checked, landscape: $('settingLandscape').checked, ...(window.MuseumAdvanced ? MuseumAdvanced.settingsValues() : {}) };
     const wasOn = !!stream, changeCamera = settings.device !== s.device;
     busy = true;
     try { if (await commit({ ...state, settings, works: Array.from({ length: count }, (_, i) => state.works[i] || null) })) { if (settings.sound) { try { audioContext ||= new (window.AudioContext || window.webkitAudioContext)(); await audioContext.resume(); } catch {} } render(); closeModal(); toast('설정을 저장했어요.'); } }
     finally { busy = false; updateBusy(); }
-    if (changeCamera && wasOn) startCamera();
+    if (changeCamera && wasOn) await startCamera();
+    if (kioskOn()) ensureKioskCamera(); else { if (state.settings.kiosk === false && stream && $('cameraPanel').hidden) stopCamera(); updateLiveMonitor(); }
   };
 };
 
@@ -420,7 +456,7 @@ async function deleteRoom(room) {
 async function leaveExhibition() {
   if (busy) { toast('작품 등록을 마친 뒤 로비로 나갈 수 있어요.'); return; }
   closeModal(); stopCamera(); MuseumWalk.stop(); MuseumWalk.setActive(false); showCapture(false);
-  ready = false; document.body.classList.remove('inside-museum'); $('welcome').hidden = false; $('exhibition').hidden = true; $('settingsBtn').hidden = true;
+  ready = false; $('liveMonitor').hidden = true; releaseWakeLock(); document.body.classList.remove('inside-museum'); $('welcome').hidden = false; $('exhibition').hidden = true; $('settingsBtn').hidden = true;
   document.body.dataset.theme = document.querySelector('[name=setupTheme]:checked')?.value || DEFAULTS.theme;
   try { await renderLobby(); } catch { failSave(); } window.scrollTo(0,0);
 }
@@ -447,7 +483,8 @@ if (navigator.locks) navigator.locks.request('memory-museum-editor', { ifAvailab
 }); else init();
 window.addEventListener('pagehide', () => { stopCamera(); releaseLock?.(); });
 window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelCapture++; gate.lock(performance.now()); } });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelCapture++; gate.lock(performance.now()); } else updateLiveMonitor(); });
+$('liveStartBtn').onclick = () => { lastCameraError = ''; kioskPaused = false; ensureKioskCamera(); };
 
 // 감상 모드는 번호 순서대로 3초마다 전환합니다. 닫을 때 타이머를 정리합니다.
 $('slideshowBtn').onclick = () => {
