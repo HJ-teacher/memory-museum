@@ -226,7 +226,10 @@ async function startCamera() {
     const selected = state.settings.device;
     // 자동 선택에는 방향을 강제하지 않습니다. 노트북의 내장 웹캠도 바로 사용합니다.
     const cameraChoice = selected.startsWith('@') ? { facingMode: { ideal: selected.slice(1) } } : selected ? { deviceId: { exact: selected } } : {};
-    const media = await navigator.mediaDevices.getUserMedia({ audio: false, video: { ...cameraChoice, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+    // 세로 작품에는 16:9보다 넓은 4:3 센서 영역을 요청합니다.
+    // resizeMode:none은 브라우저의 디지털 크롭 대신 장치의 전체 영상을 우선합니다.
+    const portrait = state.settings.cameraOrientation === 'portrait';
+    const media = await navigator.mediaDevices.getUserMedia({ audio: false, video: { ...cameraChoice, width: { ideal: 1920 }, height: { ideal: portrait ? 1440 : 1080 }, aspectRatio: { ideal: portrait ? 4 / 3 : 16 / 9 }, resizeMode: { ideal: 'none' } } });
     if (token !== cameraRequest) { media.getTracks().forEach(t => t.stop()); return; }
     stream = media; $('video').srcObject = media; await $('video').play(); lastCameraError = '';
     $('miniVideo').srcObject = media; $('miniVideo').play().catch(() => {});
@@ -276,9 +279,12 @@ $('cameraOrientation').onchange = async () => {
   busy = true; cancelCapture++; gate.lock(performance.now()); updateBusy();
   try {
     if (await commit({ ...state, settings: { ...state.settings, cameraOrientation } })) {
-      updateGuide(); status(cameraOrientation === 'portrait' ? '세로 촬영으로 바꿨어요. 미리보기를 보며 작품 방향을 맞춰 주세요.' : '가로 촬영으로 바꿨어요. 미리보기를 보며 작품 방향을 맞춰 주세요.');
+      updateGuide();
     }
   } finally { busy = false; $('cameraOrientation').value = state.settings.cameraOrientation || 'landscape'; updateBusy(); }
+  // 방향에 맞는 센서 비율로 다시 연결합니다. 설정 저장 실패 시에는 기존 방향을 유지합니다.
+  if (stream && state.settings.cameraOrientation === cameraOrientation) await startCamera();
+  status(state.settings.cameraOrientation === 'portrait' ? '넓은 세로 촬영 · 화면 전체에서 QR을 찾아요. 종이와 QR을 모두 화면 안에 놓아 주세요.' : '가로 촬영 · 화면 전체에서 QR을 찾아요.');
 };
 const cameraPreviewObserver = new ResizeObserver(updateGuide);
 cameraPreviewObserver.observe($('videoStage'));
@@ -287,14 +293,18 @@ $('video').addEventListener('resize', updateGuide);
 $('miniVideo').addEventListener('loadedmetadata', updateGuide);
 let lastQRLocation = null;
 const scanCanvas = document.createElement('canvas'), scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+let lastDetailedScan = 0;
 function scan() {
   clearTimeout(scanTimer); if (!stream) return;
   try {
     const v = $('video');
     if (!document.hidden && v.readyState >= 2 && v.videoWidth && window.jsQR) {
-      MuseumCapture.drawFrame(v, scanCanvas, state.settings.cameraOrientation, 960);
-      const pixels = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-      const qr = jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'dontInvert' });
+      // 방향과 무관하게 전체 영상을 읽고, 작은 QR은 원본에 가까운 해상도로 재시도합니다.
+      let qr = MuseumCapture.readQR(v, scanCanvas, state.settings.cameraOrientation, 1280);
+      if (!qr && performance.now() - lastDetailedScan >= 600 && Math.max(v.videoWidth, v.videoHeight) > 1280) {
+        lastDetailedScan = performance.now();
+        qr = MuseumCapture.readQR(v, scanCanvas, state.settings.cameraOrientation, 2560);
+      }
       const now = performance.now(); lastQR = qr?.data || null; if (qr) { lastSeen = now; lastQRLocation = qr.location; }
       const armed = gate.observe(!!qr, now);
       if (qr && armed && state.settings.auto && !busy && !togglePending && !$('modal').open && ready) {
@@ -437,7 +447,7 @@ $('settingsBtn').onclick = () => {
     e.preventDefault(); if (busy) return;
     const title = $('settingTitle').value.trim(), count = Number($('settingCount').value); if (!title || !Number.isInteger(count) || count < highest || count > 40) { toast('전시관 이름과 작품 수를 확인해 주세요.'); return; }
     const settings = { ...s, title, count, theme: document.querySelector('[name=settingTheme]:checked').value, device: $('settingCamera').value, auto: $('settingAuto').checked, kiosk: $('settingKiosk').checked, sound: $('settingSound').checked, askTitle: $('settingWorkTitle').checked, askAuthor: $('settingAuthor').checked, askDescription: $('settingDescription').checked, cameraOrientation: $('settingOrientation').value, ...(window.MuseumAdvanced ? MuseumAdvanced.settingsValues() : {}) };
-    const wasOn = !!stream, changeCamera = settings.device !== s.device;
+    const wasOn = !!stream, changeCamera = settings.device !== s.device || settings.cameraOrientation !== s.cameraOrientation;
     busy = true;
     try { if (await commit({ ...state, settings, works: Array.from({ length: count }, (_, i) => state.works[i] || null) })) { if (settings.sound) { try { audioContext ||= new (window.AudioContext || window.webkitAudioContext)(); await audioContext.resume(); } catch {} } render(); closeModal(); toast('설정을 저장했어요.'); } }
     finally { busy = false; updateBusy(); }

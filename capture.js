@@ -24,12 +24,19 @@ window.MuseumCapture = (() => {
     canvas.height = Math.max(1, Math.round(size.height * scale));
     const ctx = canvas.getContext('2d');
     ctx.save();
+    // 작은 QR 모듈의 대비를 축소 과정에서 흐리지 않습니다.
+    ctx.imageSmoothingEnabled = false;
     if (size.rotate) {
       ctx.translate(canvas.width, 0); ctx.rotate(Math.PI / 2);
       ctx.drawImage(video, 0, 0, canvas.height, canvas.width);
     } else ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     ctx.restore();
     return canvas;
+  }
+  function readQR(video, canvas, orientation, maxSize = 1280) {
+    drawFrame(video, canvas, orientation, maxSize);
+    const pixels = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height);
+    return jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' });
   }
   async function fromVideo(video, settings) {
     if (!video.videoWidth) throw new Error('not ready');
@@ -59,7 +66,7 @@ window.MuseumCapture = (() => {
       return output ? { blob: await blob(output), mode: '사진 종이 보정' } : null;
     } finally { URL.revokeObjectURL(url); }
   }
-  return { guide, make, blob, crop, frameSize, drawFrame, fromVideo, fromFile };
+  return { guide, make, blob, crop, frameSize, drawFrame, readQR, fromVideo, fromFile };
 })();
 
 
