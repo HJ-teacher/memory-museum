@@ -22,3 +22,9 @@ textarea { width:100%; padding:12px; font:inherit; border:1px solid #aaa; border
 .wall-caption .wall-description { display:block; max-height:110px; overflow:auto; font-size:14px; line-height:1.4; }
 
 .artwork-modal .artwork-editor .view-image { height:30dvh; max-height:30dvh; margin-bottom:16px; }
+
+/* 선택한 방향으로 카메라 전체 화면을 표시합니다. */
+.camera-panel .video-stage{position:relative;overflow:hidden}
+.live-screen{overflow:hidden}
+.camera-panel .guide span{white-space:normal;max-width:100%;width:max-content;box-sizing:border-box}
+

@@ -11,9 +11,29 @@ window.MuseumCapture = (() => {
     const c = make(rect.w * scale, rect.h * scale);
     c.getContext('2d').drawImage(source, rect.x, rect.y, rect.w, rect.h, 0, 0, c.width, c.height); return c;
   }
+  function frameSize(video, orientation = 'landscape') {
+    const w = video.videoWidth, h = video.videoHeight;
+    const rotate = orientation === 'portrait' ? w > h : h > w;
+    return { width: rotate ? h : w, height: rotate ? w : h, rotate };
+  }
+  // QR 인식과 저장은 미리보기와 동일한 회전을 사용합니다.
+  function drawFrame(video, canvas, orientation = 'landscape', maxSize = Infinity) {
+    const size = frameSize(video, orientation);
+    const scale = Math.min(1, maxSize / Math.max(size.width, size.height));
+    canvas.width = Math.max(1, Math.round(size.width * scale));
+    canvas.height = Math.max(1, Math.round(size.height * scale));
+    const ctx = canvas.getContext('2d');
+    ctx.save();
+    if (size.rotate) {
+      ctx.translate(canvas.width, 0); ctx.rotate(Math.PI / 2);
+      ctx.drawImage(video, 0, 0, canvas.height, canvas.width);
+    } else ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.restore();
+    return canvas;
+  }
   async function fromVideo(video, settings) {
     if (!video.videoWidth) throw new Error('not ready');
-    const c = make(video.videoWidth, video.videoHeight); c.getContext('2d').drawImage(video, 0, 0);
+    const c = drawFrame(video, make(1, 1), settings.cameraOrientation);
     let output = null, mode = '화면 자동 크롭';
     if (settings.autoDocument && window.MuseumAdvanced) {
       try { output = MuseumAdvanced.documentCrop(c, settings.qrLocation); if (output) mode = '종이 자동 보정'; } catch { output = null; }
@@ -39,6 +59,7 @@ window.MuseumCapture = (() => {
       return output ? { blob: await blob(output), mode: '사진 종이 보정' } : null;
     } finally { URL.revokeObjectURL(url); }
   }
-  return { guide, make, blob, crop, fromVideo, fromFile };
+  return { guide, make, blob, crop, frameSize, drawFrame, fromVideo, fromFile };
 })();
+
 

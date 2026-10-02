@@ -41,6 +41,7 @@
         <div class="panel-heading"><h2>작품을 올려 주세요</h2><button id="closeCameraPanel">닫기 ×</button></div><span id="cameraBadge">카메라 꺼짐</span>
         <div class="video-shell" id="videoShell"><div class="video-stage" id="videoStage"><video id="video" autoplay playsinline muted></video><div id="guide" class="guide"><span>화면 전체 인식 · 종이 네 모서리가 보이게 해 주세요</span></div><div id="countdown" class="countdown" aria-live="assertive"></div></div><div id="cameraPlaceholder" class="camera-placeholder"><span aria-hidden="true">▣</span><strong>작품과 만날 준비를 해요</strong><p>실물화상기 또는 카메라를 연결해 주세요.</p></div></div>
         <p id="captureStatus" class="capture-status" role="status">카메라를 시작하거나 사진으로 작품을 추가하세요.</p>
+        <label for="cameraOrientation">촬영 방향</label><select id="cameraOrientation"><option value="landscape">가로</option><option value="portrait">세로</option></select>
         <label for="cameraSelect">카메라 선택</label><select id="cameraSelect"><option value="">기본 카메라</option></select>
         <div class="row"><button id="startCamera" class="primary">카메라 시작</button><button id="stopCamera">카메라 끄기</button></div>
         <button id="autoBtn" class="wide toggle" aria-pressed="true">자동 촬영 ON</button><button id="manualBtn" class="wide" disabled>지금 촬영 · 수동 촬영</button>
@@ -71,4 +72,5 @@
 <div class="crop-actions"><button id="cropReset">사진 전체 선택</button><button id="cropRotate">↻ 오른쪽으로 회전</button><button id="cropSave" class="primary">종이만 잘라 전시하기</button></div></dialog>
 <div id="printArea"></div>
 </body></html>
+
 

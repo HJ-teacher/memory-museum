@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const THEMES = { museum: '클래식 박물관', art: '유럽 궁전 미술관', simple: '현대 미술관', tradition: '조선 궁궐관' };
 const THEME_NOTES = { museum: '아이보리 벽·금빛 액자·마루', art: '붉은 벽·바로크 금박 액자·대리석', simple: '어두운 벽·스포트라이트·콘크리트', tradition: '단청·붉은 기둥·족자·일월오봉도' };
 const THEME_PREVIEWS = { museum: 'museum-entry.png', art: 'rooms/euro-entry.jpg', simple: 'rooms/modern-entry.jpg', tradition: 'rooms/palace-entry.jpg' };
-const DEFAULTS = { title: '우리 반 기억 박물관', count: 24, theme: 'museum', device: '', auto: true, sound: false, askTitle: false, askAuthor: false, askDescription: false, landscape: false, fit: false, autoDocument: true, hideQR: true, kiosk: true };
+const DEFAULTS = { title: '우리 반 기억 박물관', count: 24, theme: 'museum', device: '', auto: true, sound: false, askTitle: false, askAuthor: false, askDescription: false, cameraOrientation: 'landscape', landscape: false, fit: false, autoDocument: true, hideQR: true, kiosk: true };
 let state = null;
 function themeChoices(container, group, current) {
   container.replaceChildren();
@@ -71,10 +71,10 @@ async function commit(candidate) {
 }
 function imageURL(work) { if (!imageURLs.has(work.id)) imageURLs.set(work.id, URL.createObjectURL(work.blob)); return imageURLs.get(work.id); }
 function cleanupURLs() { const ids = new Set((state?.works || []).filter(Boolean).map(w => w.id)); for (const [id, url] of imageURLs) if (!ids.has(id)) { URL.revokeObjectURL(url); imageURLs.delete(id); } }
-function updateBusy() { updateShootMenu(); $('manualBtn').disabled = busy || !stream || nextSlot() < 0; $('uploadBtn').disabled = busy || nextSlot() < 0; }
+function updateBusy() { $('cameraOrientation').disabled = busy; updateShootMenu(); $('manualBtn').disabled = busy || !stream || nextSlot() < 0; $('uploadBtn').disabled = busy || nextSlot() < 0; }
 function render() {
   if (!state) return;
-  const s = state.settings; document.body.dataset.theme = s.theme;
+  const s = state.settings; $('cameraOrientation').value = s.cameraOrientation || 'landscape'; document.body.dataset.theme = s.theme;
   $('galleryTitle').textContent = s.title; $('themeLabel').textContent = THEMES[s.theme];
   $('progressText').textContent = `현재 전시 작품 ${occupied()} / ${s.count}`;
   $('progressBar').style.width = (occupied() / s.count * 100) + '%';
@@ -250,11 +250,41 @@ $('cameraSelect').onchange = async () => {
   if (wasOn) await startCamera();
 };
 navigator.mediaDevices?.addEventListener('devicechange', () => deviceList().catch(() => {}));
-function updateGuide() {
-  const v = $('video'); if (!v.videoWidth) return;
-  const r = MuseumCapture.guide(v.videoWidth, v.videoHeight, state?.settings.landscape);
-  Object.assign($('guide').style, { left: (r.x / v.videoWidth * 100) + '%', top: (r.y / v.videoHeight * 100) + '%', width: (r.w / v.videoWidth * 100) + '%', height: (r.h / v.videoHeight * 100) + '%' });
+function fitCameraPreview(video, container, orientation) {
+  if (!video.videoWidth || !container.clientWidth || !container.clientHeight) return null;
+  const size = MuseumCapture.frameSize(video, orientation);
+  const scale = Math.min(container.clientWidth / size.width, container.clientHeight / size.height);
+  const width = size.width * scale, height = size.height * scale;
+  Object.assign(video.style, {
+    position: 'absolute', left: '50%', top: '50%', maxWidth: 'none',
+    width: (video.videoWidth * scale) + 'px', height: (video.videoHeight * scale) + 'px',
+    objectFit: 'contain', transform: 'translate(-50%, -50%) rotate(' + (size.rotate ? 90 : 0) + 'deg)'
+  });
+  return { width, height, x: (container.clientWidth - width) / 2, y: (container.clientHeight - height) / 2 };
 }
+function updateGuide() {
+  const orientation = state?.settings.cameraOrientation || 'landscape';
+  const box = fitCameraPreview($('video'), $('videoStage'), orientation);
+  fitCameraPreview($('miniVideo'), $('miniVideo').parentElement, orientation);
+  if (!box) return;
+  const r = MuseumCapture.guide(box.width, box.height);
+  Object.assign($('guide').style, { left: (box.x + r.x) + 'px', top: (box.y + r.y) + 'px', width: r.w + 'px', height: r.h + 'px' });
+}
+$('cameraOrientation').onchange = async () => {
+  if (!state || busy) { $('cameraOrientation').value = state?.settings.cameraOrientation || 'landscape'; return; }
+  const cameraOrientation = $('cameraOrientation').value;
+  busy = true; cancelCapture++; gate.lock(performance.now()); updateBusy();
+  try {
+    if (await commit({ ...state, settings: { ...state.settings, cameraOrientation } })) {
+      updateGuide(); status(cameraOrientation === 'portrait' ? '세로 촬영으로 바꿨어요. 미리보기를 보며 작품 방향을 맞춰 주세요.' : '가로 촬영으로 바꿨어요. 미리보기를 보며 작품 방향을 맞춰 주세요.');
+    }
+  } finally { busy = false; $('cameraOrientation').value = state.settings.cameraOrientation || 'landscape'; updateBusy(); }
+};
+const cameraPreviewObserver = new ResizeObserver(updateGuide);
+cameraPreviewObserver.observe($('videoStage'));
+cameraPreviewObserver.observe($('miniVideo').parentElement);
+$('video').addEventListener('resize', updateGuide);
+$('miniVideo').addEventListener('loadedmetadata', updateGuide);
 let lastQRLocation = null;
 const scanCanvas = document.createElement('canvas'), scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
 function scan() {
@@ -262,8 +292,7 @@ function scan() {
   try {
     const v = $('video');
     if (!document.hidden && v.readyState >= 2 && v.videoWidth && window.jsQR) {
-      const scale = Math.min(1, 960 / v.videoWidth); scanCanvas.width = Math.round(v.videoWidth * scale); scanCanvas.height = Math.round(v.videoHeight * scale);
-      scanCtx.drawImage(v, 0, 0, scanCanvas.width, scanCanvas.height);
+      MuseumCapture.drawFrame(v, scanCanvas, state.settings.cameraOrientation, 960);
       const pixels = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
       const qr = jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'dontInvert' });
       const now = performance.now(); lastQR = qr?.data || null; if (qr) { lastSeen = now; lastQRLocation = qr.location; }
@@ -395,19 +424,19 @@ $('helpBtn').onclick = () => openModal('작품을 전시하는 방법', '<ol cla
 $('settingsBtn').onclick = () => {
   if (busy) { toast('작품 등록이 끝나면 설정을 바꿀 수 있어요.'); return; }
   const s = state.settings, highest = state.works.reduce((max, w, i) => w ? i + 1 : max, 1);
-  openModal('전시관 설정', '<form id="settingsForm"><label for="settingTitle">전시관 이름</label><input id="settingTitle" maxlength="60" required><label for="settingCount">작품 칸 수</label><input id="settingCount" type="number" max="40" required><p id="countHelp" class="small"></p><fieldset class="theme-field"><legend>전시관 분위기</legend><div id="settingThemes" class="theme-choices"></div></fieldset><label for="settingCamera">카메라 선택</label><select id="settingCamera"></select><label class="inline-label"><input id="settingAuto" type="checkbox">자동 촬영</label><label class="inline-label"><input id="settingKiosk" type="checkbox">자동 게시 모드 · 카메라를 항상 켜 두고 QR을 비추면 클릭 없이 바로 전시</label><label class="inline-label"><input id="settingSound" type="checkbox">등록 효과음</label><fieldset><legend>촬영 후 입력할 작품 정보 (선택)</legend><p class="small">모두 끄면 자동 크롭 후 입력 대기 없이 바로 전시합니다. 사진 일괄 업로드는 항상 바로 등록되며, 액자를 두 번 누르면 세 항목을 나중에 편집할 수 있어요.</p><label class="inline-label"><input id="settingWorkTitle" type="checkbox">작품 제목 적기</label><label class="inline-label"><input id="settingAuthor" type="checkbox">작가 이름 적기</label><label class="inline-label"><input id="settingDescription" type="checkbox">작품 설명 적기</label></fieldset><label class="inline-label"><input id="settingLandscape" type="checkbox">가로 작품용 촬영 가이드</label><div id="advancedSettings"></div><p class="small">작품은 이 기기의 브라우저에만 저장됩니다.<br>브라우저의 사이트 데이터를 지우면 작품도 삭제됩니다.</p><div class="row"><button type="submit" class="primary">설정 저장</button></div></form><div class="settings-danger"><p>이 전시관과 안에 걸린 작품을 모두 지워요. 다른 전시관은 그대로 남아요.</p><button type="button" id="deleteRoomBtn">이 전시관 삭제</button></div>');
+  openModal('전시관 설정', '<form id="settingsForm"><label for="settingTitle">전시관 이름</label><input id="settingTitle" maxlength="60" required><label for="settingCount">작품 칸 수</label><input id="settingCount" type="number" max="40" required><p id="countHelp" class="small"></p><fieldset class="theme-field"><legend>전시관 분위기</legend><div id="settingThemes" class="theme-choices"></div></fieldset><label for="settingCamera">카메라 선택</label><select id="settingCamera"></select><label class="inline-label"><input id="settingAuto" type="checkbox">자동 촬영</label><label class="inline-label"><input id="settingKiosk" type="checkbox">자동 게시 모드 · 카메라를 항상 켜 두고 QR을 비추면 클릭 없이 바로 전시</label><label class="inline-label"><input id="settingSound" type="checkbox">등록 효과음</label><fieldset><legend>촬영 후 입력할 작품 정보 (선택)</legend><p class="small">모두 끄면 자동 크롭 후 입력 대기 없이 바로 전시합니다. 사진 일괄 업로드는 항상 바로 등록되며, 액자를 두 번 누르면 세 항목을 나중에 편집할 수 있어요.</p><label class="inline-label"><input id="settingWorkTitle" type="checkbox">작품 제목 적기</label><label class="inline-label"><input id="settingAuthor" type="checkbox">작가 이름 적기</label><label class="inline-label"><input id="settingDescription" type="checkbox">작품 설명 적기</label></fieldset><label for="settingOrientation">촬영 방향</label><select id="settingOrientation"><option value="landscape">가로</option><option value="portrait">세로</option></select><p class="small">선택한 방향으로 화면 전체를 회전해 촬영해요. 미리보기를 보며 작품 방향을 맞춰 주세요.</p><div id="advancedSettings"></div><p class="small">작품은 이 기기의 브라우저에만 저장됩니다.<br>브라우저의 사이트 데이터를 지우면 작품도 삭제됩니다.</p><div class="row"><button type="submit" class="primary">설정 저장</button></div></form><div class="settings-danger"><p>이 전시관과 안에 걸린 작품을 모두 지워요. 다른 전시관은 그대로 남아요.</p><button type="button" id="deleteRoomBtn">이 전시관 삭제</button></div>');
   $('deleteRoomBtn').onclick = () => deleteRoom({ id: state.id, title: s.title, occupied: occupied() });
   $('settingTitle').value = s.title; $('settingCount').value = s.count; $('settingCount').min = highest;
   $('countHelp').textContent = `빈 자리를 유지하기 위해 마지막 작품이 있는 ${highest}번 칸까지는 남겨 두어요.`;
   themeChoices($('settingThemes'), 'settingTheme', s.theme);
-  $('settingAuto').checked = s.auto; $('settingKiosk').checked = s.kiosk !== false; $('settingSound').checked = s.sound; $('settingWorkTitle').checked = !!s.askTitle; $('settingAuthor').checked = !!s.askAuthor; $('settingDescription').checked = !!s.askDescription; $('settingLandscape').checked = s.landscape;
+  $('settingAuto').checked = s.auto; $('settingKiosk').checked = s.kiosk !== false; $('settingSound').checked = s.sound; $('settingWorkTitle').checked = !!s.askTitle; $('settingAuthor').checked = !!s.askAuthor; $('settingDescription').checked = !!s.askDescription; $('settingOrientation').value = s.cameraOrientation || 'landscape';
   $('settingCamera').replaceChildren(...[...$('cameraSelect').options].map(o => o.cloneNode(true))); $('settingCamera').value = s.device;
   deviceList().catch(() => {});
   if (window.MuseumAdvanced) MuseumAdvanced.settingsUI(s);
   $('settingsForm').onsubmit = async e => {
     e.preventDefault(); if (busy) return;
     const title = $('settingTitle').value.trim(), count = Number($('settingCount').value); if (!title || !Number.isInteger(count) || count < highest || count > 40) { toast('전시관 이름과 작품 수를 확인해 주세요.'); return; }
-    const settings = { ...s, title, count, theme: document.querySelector('[name=settingTheme]:checked').value, device: $('settingCamera').value, auto: $('settingAuto').checked, kiosk: $('settingKiosk').checked, sound: $('settingSound').checked, askTitle: $('settingWorkTitle').checked, askAuthor: $('settingAuthor').checked, askDescription: $('settingDescription').checked, landscape: $('settingLandscape').checked, ...(window.MuseumAdvanced ? MuseumAdvanced.settingsValues() : {}) };
+    const settings = { ...s, title, count, theme: document.querySelector('[name=settingTheme]:checked').value, device: $('settingCamera').value, auto: $('settingAuto').checked, kiosk: $('settingKiosk').checked, sound: $('settingSound').checked, askTitle: $('settingWorkTitle').checked, askAuthor: $('settingAuthor').checked, askDescription: $('settingDescription').checked, cameraOrientation: $('settingOrientation').value, ...(window.MuseumAdvanced ? MuseumAdvanced.settingsValues() : {}) };
     const wasOn = !!stream, changeCamera = settings.device !== s.device;
     busy = true;
     try { if (await commit({ ...state, settings, works: Array.from({ length: count }, (_, i) => state.works[i] || null) })) { if (settings.sound) { try { audioContext ||= new (window.AudioContext || window.webkitAudioContext)(); await audioContext.resume(); } catch {} } render(); closeModal(); toast('설정을 저장했어요.'); } }
@@ -548,4 +577,5 @@ $('exportBtn').onclick = async () => {
   } catch { toast('이미지를 저장하지 못했어요. 기기 저장 공간을 확인하고 다시 시도해 주세요.'); }
   finally { busy = false; $('exportBtn').disabled = false; updateBusy(); }
 };
+
 
