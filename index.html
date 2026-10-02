@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="museum.css">
   <link rel="stylesheet" href="themes.css">
   <script defer src="jsQR.js"></script><script defer src="qrcode.js"></script>
-  <script defer src="storage.js"></script><script defer src="qr.js"></script><script defer src="document.js"></script><script defer src="capture.js"></script><script defer src="crop.js"></script><script defer src="walk.js"></script><script defer src="app.js"></script>
+  <script defer src="storage.js"></script><script defer src="qr.js?v=20261002-fast-hq"></script><script defer src="document.js?v=20261002-fast-hq"></script><script defer src="capture.js?v=20261002-fast-hq"></script><script defer src="crop.js?v=20261002-fast-hq"></script><script defer src="walk.js"></script><script defer src="app.js?v=20261002-fast-hq"></script>
 </head>
 <body data-theme="museum">
 <header class="topbar"><button class="brand" id="lobbyBtn" type="button" aria-label="전시관 로비로"><span class="brand-icon" aria-hidden="true">▥</span> 기억 박물관 <span class="brand-note">우리 반 작품 전시관</span></button><div class="row"><button id="helpBtn" class="quiet">? 사용 방법</button><button id="settingsBtn" class="quiet" hidden>⚙ 설정</button></div></header>
@@ -45,7 +45,7 @@
         <label for="cameraSelect">카메라 선택</label><select id="cameraSelect"><option value="">기본 카메라</option></select>
         <div class="row"><button id="startCamera" class="primary">카메라 시작</button><button id="stopCamera">카메라 끄기</button></div>
         <button id="autoBtn" class="wide toggle" aria-pressed="true">자동 촬영 ON</button><button id="manualBtn" class="wide" disabled>지금 촬영 · 수동 촬영</button>
-        <p class="small">화면 전체에서 QR을 인식해요. 작은 네모에 맞출 필요 없어요.<br>종이와 QR이 화면 안에 온전히 보이면 자동 촬영 후 종이만 잘라 전시합니다. 경계가 불확실할 때만 모서리를 확인해 주세요.</p>
+        <p class="small">QR을 찾으면 1초 후 고화질로 촬영해요. 작은 네모에 맞출 필요 없어요.<br>종이와 QR을 화면 안에 놓아 주세요. 종이 경계가 불확실할 때만 모서리를 확인합니다. 작품을 치웠다가 다음 작품을 올려 주세요.</p>
       </aside>
       <div class="gallery-area"><div class="gallery-tools"><span id="galleryHint">빈 액자를 채워 볼까요?</span><label class="inline-label"><input type="checkbox" id="fitToggle"> 한 화면에 모아 보기</label></div><div id="gallery" class="gallery" aria-label="작품 전시관"></div></div>
     </div>

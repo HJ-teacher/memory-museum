@@ -16,10 +16,10 @@ window.MuseumQR = (() => {
     for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (qr.isDark(y, x)) ctx.fillRect((x + 4) * scale, (y + 4) * scale, scale, scale);
     return c;
   }
-  // 재무장에는 QR이 1.2초 이상 사라지고 촬영 후 4초가 모두 지나야 합니다.
+  // 다음 작품은 QR이 1.2초 이상 사라지고 촬영 후 1.5초가 지나면 준비합니다.
   class Gate {
     constructor() { this.locked = false; this.absentSince = null; this.until = 0; }
-    lock(now) { this.locked = true; this.until = now + 4000; this.absentSince = null; }
+    lock(now) { this.locked = true; this.until = now + 1500; this.absentSince = null; }
     observe(present, now) {
       if (present) this.absentSince = null;
       else if (this.absentSince === null) this.absentSince = now;
@@ -29,3 +29,4 @@ window.MuseumQR = (() => {
   }
   return { slotFor, canvas, Gate };
 })();
+

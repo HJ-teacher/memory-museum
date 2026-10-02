@@ -232,6 +232,8 @@ async function startCamera() {
     const media = await navigator.mediaDevices.getUserMedia({ audio: false, video: { ...cameraChoice, width: { ideal: 3840 }, height: { ideal: portrait ? 2880 : 2160 }, aspectRatio: { ideal: portrait ? 4 / 3 : 16 / 9 }, resizeMode: { ideal: 'none' } } });
     if (token !== cameraRequest) { media.getTracks().forEach(t => t.stop()); return; }
     stream = media; $('video').srcObject = media; await $('video').play(); lastCameraError = '';
+    const track = media.getVideoTracks()[0], capabilities = track.getCapabilities?.() || {};
+    if (capabilities.focusMode?.includes('continuous')) track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
     $('miniVideo').srcObject = media; $('miniVideo').play().catch(() => {});
     if (token !== cameraRequest) return;
     $('videoStage').classList.add('active'); $('cameraPlaceholder').hidden = true; $('cameraBadge').textContent = media.getVideoTracks()[0].label || '카메라 연결됨';
@@ -293,32 +295,15 @@ $('video').addEventListener('resize', updateGuide);
 $('miniVideo').addEventListener('loadedmetadata', updateGuide);
 let lastQRLocation = null;
 const scanCanvas = document.createElement('canvas'), scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
-let qrRegionIndex = 0, trackedQRRegion = null, qrRegionSize = null;
+let processingCapture = false;
 async function scan() {
   clearTimeout(scanTimer); if (!stream) return;
+  if (processingCapture) { scanTimer = setTimeout(scan, 100); return; }
   const scanRequest = cameraRequest;
   try {
     const v = $('video');
     if (!document.hidden && v.readyState >= 2 && v.videoWidth && window.jsQR) {
-      const regionSize = `${v.videoWidth}x${v.videoHeight}`;
-      if (qrRegionSize !== regionSize) { qrRegionSize = regionSize; qrRegionIndex = 0; trackedQRRegion = null; }
-      let qr = trackedQRRegion ? await MuseumCapture.readQRAsync(v, scanCanvas, state.settings.cameraOrientation, trackedQRRegion) : null;
-      if (scanRequest !== cameraRequest || !stream) return;
-      if (!qr) {
-        trackedQRRegion = null;
-        qr = await MuseumCapture.readQRAsync(v, scanCanvas, state.settings.cameraOrientation);
-        if (scanRequest !== cameraRequest || !stream) return;
-      }
-      if (!qr) {
-        const regions = MuseumCapture.qrRegions(v);
-        // 두 영역씩 순회하고 찾은 영역을 추적해 작은 QR도 안정적으로 읽습니다.
-        for (let attempt = 0; attempt < Math.min(2, regions.length) && !qr; attempt++) {
-          const region = regions[qrRegionIndex++ % regions.length];
-          qr = await MuseumCapture.readQRAsync(v, scanCanvas, state.settings.cameraOrientation, region);
-          if (scanRequest !== cameraRequest || !stream) return;
-          if (qr) trackedQRRegion = region;
-        }
-      }
+      const qr = await MuseumCapture.readFastQR(v, scanCanvas, state.settings.cameraOrientation);
       if (scanRequest !== cameraRequest || !stream) return;
       const now = performance.now(); lastQR = qr?.data || null; if (qr) { lastSeen = now; lastQRLocation = qr.location; }
       const armed = gate.observe(!!qr, now);
@@ -331,21 +316,20 @@ async function scan() {
       }
     }
   } catch { status('QR을 읽기 어려워요. 조명을 조절하거나 수동 촬영을 사용해 주세요.'); }
-  if (scanRequest === cameraRequest && stream) scanTimer = setTimeout(scan, 160);
+  if (scanRequest === cameraRequest && stream) scanTimer = setTimeout(scan, 60);
 }
 async function capture(slot, qrText = null) {
   if (busy || !stream || slot < 0 || state.works[slot]) return;
   busy = true; updateBusy(); const token = ++cancelCapture;
-  $('guide').classList.add('found'); status(qrText ? '작품을 찾았어요! 잠시 그대로 두세요.' : '잠시 그대로 두세요. 곧 촬영해요.'); live('작품을 찾았어요!', `움직이지 말고 그대로 들고 있어요 · ${number(slot)}번 액자`, 'found');
+  $('guide').classList.add('found'); status(qrText ? 'QR을 찾았어요! 1초 후 촬영해요.' : '1초 후 촬영해요. 잠시 그대로 두세요.'); live('1초 후 촬영해요', `잠시 그대로 들어 주세요 · ${number(slot)}번 액자`, 'found');
   try {
-    for (let n = 2; n >= 1; n--) {
-      setCountdown(n);
-      for (let step = 0; step < 5; step++) {
-        await sleep(200);
+    const deadline = performance.now() + 1000;
+    setCountdown('1');
+    while (performance.now() < deadline) {
+        await sleep(Math.min(50, Math.max(0, deadline - performance.now())));
         if (token !== cancelCapture || !stream || document.hidden || (qrText && (performance.now() - lastSeen > 850 || (lastQR && lastQR !== qrText)))) { status('촬영을 멈췄어요. 작품과 QR을 다시 맞춰 주세요.'); live('다시 비춰 주세요', 'QR이 화면에서 벗어났어요. 활동지를 카메라 앞에 가만히 들어 주세요.', 'warn'); return; }
-      }
     }
-    setCountdown('찰칵!'); gate.lock(performance.now());
+    processingCapture = true; setCountdown('찰칵!'); gate.lock(performance.now());
     const result = await MuseumCapture.fromVideo($('video'), { ...state.settings, review: false });
     $('videoShell').classList.add('flash'); setTimeout(() => $('videoShell').classList.remove('flash'), 350);
     if (!result) { status('촬영을 취소했어요. 다시 촬영할 수 있습니다.'); return; }
@@ -353,7 +337,7 @@ async function capture(slot, qrText = null) {
     if (saved && qrText) { live('전시했어요!', `${number(slot)}번 액자에 걸었어요. 활동지를 치우면 다음 친구 차례예요.`, 'done'); clearTimeout(liveTimer); liveTimer = setTimeout(() => { if (!busy && stream) liveReady(); }, 5200); }
     status(saved ? '촬영했어요 (' + result.mode + '). 작품을 치우고 다음 작품을 올려 주세요.' : '저장하지 못했어요. 저장 공간을 확인한 후 다시 촬영해 주세요.');
   } catch { toast('촬영을 완료하지 못했어요. 다시 촬영하거나 사진으로 작품을 추가해 주세요.'); }
-  finally { setCountdown(''); $('guide').classList.remove('found'); busy = false; updateBusy(); }
+  finally { processingCapture = false; setCountdown(''); $('guide').classList.remove('found'); busy = false; updateBusy(); }
 }
 $('manualBtn').onclick = () => capture(nextSlot());
 let togglePending = false;

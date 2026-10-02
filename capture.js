@@ -3,18 +3,19 @@ window.MuseumCapture = (() => {
   let qrWorker = null, workerFailed = false;
   let qrRequestId = 0;
   const qrRequests = new Map();
-  function decodeAsync(canvas) {
+  let fastRegion = null;
+  function decodeAsync(canvas, fast = false) {
     const pixels = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height);
     if (workerFailed || !window.Worker) return Promise.resolve(jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' }));
     return new Promise(resolve => {
       try {
         if (!qrWorker) {
-          qrWorker = new Worker('qr-worker.js');
+          qrWorker = new Worker('qr-worker.js?v=20261002-fast-hq');
           qrWorker.onmessage = event => { const pending = qrRequests.get(event.data.id); qrRequests.delete(event.data.id); pending?.(event.data.qr); };
           qrWorker.onerror = () => { qrWorker.terminate(); qrWorker = null; workerFailed = true; for (const pending of qrRequests.values()) pending(null); qrRequests.clear(); };
         }
         const id = ++qrRequestId; qrRequests.set(id, resolve);
-        qrWorker.postMessage({ id, data: pixels.data, width: pixels.width, height: pixels.height }, [pixels.data.buffer]);
+        qrWorker.postMessage({ id, data: pixels.data, width: pixels.width, height: pixels.height, fast }, [pixels.data.buffer]);
       } catch { workerFailed = true; resolve(null); }
     });
   }
@@ -23,14 +24,42 @@ window.MuseumCapture = (() => {
     else drawFrame(video, canvas, orientation, 1280);
     return decodeAsync(canvas);
   }
+  async function readFastQR(video, canvas, orientation) {
+    const width = video.videoWidth, height = video.videoHeight;
+    if (fastRegion && fastRegion.width === width && fastRegion.height === height) {
+      const region = fastRegion;
+      drawQRRegion(video, canvas, { ...region, scale: 1 });
+      const qr = await decodeAsync(canvas, true);
+      if (qr) {
+        for (const point of Object.values(qr.location)) { point.x += region.x; point.y += region.y; }
+        rememberRegion(qr, width, height); return qr;
+      }
+    }
+    fastRegion = null;
+    if (workerFailed || !window.Worker) return readQR(video, canvas, orientation, 1280);
+    // QR 방향은 디코더가 처리합니다. 전체 영상의 회전·복사를 줄입니다.
+    canvas.width = width; canvas.height = height; canvas.getContext('2d').drawImage(video, 0, 0);
+    const qr = await decodeAsync(canvas, true);
+    if (qr) rememberRegion(qr, width, height);
+    return qr;
+  }
+  function rememberRegion(qr, width, height) {
+    const points = ['topLeftCorner', 'topRightCorner', 'bottomRightCorner', 'bottomLeftCorner'].map(k => qr.location[k]);
+    const left = Math.min(...points.map(p => p.x)), right = Math.max(...points.map(p => p.x));
+    const top = Math.min(...points.map(p => p.y)), bottom = Math.max(...points.map(p => p.y));
+    const margin = Math.max(48, right - left, bottom - top);
+    const x = Math.max(0, Math.floor(left - margin)), y = Math.max(0, Math.floor(top - margin));
+    fastRegion = { x, y, w: Math.min(width - x, Math.ceil(right - left + margin * 2)), h: Math.min(height - y, Math.ceil(bottom - top + margin * 2)), width, height };
+  }
+  function readCanvasQR(canvas) { return decodeAsync(canvas, true); }
   function guide(w, h, landscape = false) {
     const margin = 0.03;
     return { x: Math.round(w * margin), y: Math.round(h * margin), w: Math.round(w * (1 - 2 * margin)), h: Math.round(h * (1 - 2 * margin)) };
   }
   function make(w, h) { const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
-  function blob(c) { return new Promise((resolve, reject) => c.toBlob(b => b ? resolve(b) : reject(new Error('encode')), 'image/jpeg', .9)); }
+  function blob(c) { return new Promise((resolve, reject) => c.toBlob(b => b ? resolve(b) : reject(new Error('encode')), 'image/jpeg', .97)); }
   function crop(source, rect) {
-    const scale = Math.min(1, 1600 / Math.max(rect.w, rect.h));
+    const scale = Math.min(1, 4096 / Math.max(rect.w, rect.h));
     const c = make(rect.w * scale, rect.h * scale);
     c.getContext('2d').drawImage(source, rect.x, rect.y, rect.w, rect.h, 0, 0, c.width, c.height); return c;
   }
@@ -76,7 +105,7 @@ window.MuseumCapture = (() => {
     return [...new Set([...priority, ...regions.map((_, i) => i)])].map(i => regions[i]);
   }
   function drawQRRegion(video, canvas, region) {
-    canvas.width = region.w * 2; canvas.height = region.h * 2;
+    canvas.width = region.w * (region.scale || 2); canvas.height = region.h * (region.scale || 2);
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(video, region.x, region.y, region.w, region.h, 0, 0, canvas.width, canvas.height);
@@ -93,14 +122,14 @@ window.MuseumCapture = (() => {
     const c = drawFrame(video, make(1, 1), settings.cameraOrientation);
     let output = null, mode = '화면 자동 크롭';
     if (settings.autoDocument && window.MuseumAdvanced) {
-      try { output = MuseumAdvanced.documentCrop(c, settings.qrLocation); if (output) mode = '종이 자동 보정'; } catch { output = null; }
+      try { output = await MuseumAdvanced.documentCropAsync(c, settings.qrLocation); if (output) mode = '종이 자동 보정'; } catch { output = null; }
     }
     if (settings.review || !output) {
       const reviewed = await MuseumCrop.review(c);
       if (!reviewed) return null;
       output = reviewed; mode = '종이 크롭 · 원근 보정';
     }
-    if (window.MuseumAdvanced) { try { MuseumAdvanced.hideQR(output); } catch {} }
+    if (window.MuseumAdvanced) { try { await MuseumAdvanced.hideQRAsync(output); } catch {} }
     return { blob: await blob(output), mode };
   }
   async function fromFile(file, { autoCrop = false } = {}) {
@@ -110,13 +139,13 @@ window.MuseumCapture = (() => {
       img.src = url; await img.decode();
       if (img.naturalWidth * img.naturalHeight > 60000000) throw new Error('large image');
       const source = crop(img, { x: 0, y: 0, w: img.naturalWidth, h: img.naturalHeight });
-      const detected = autoCrop ? MuseumAdvanced.documentCrop(source) : null;
+      const detected = autoCrop ? await MuseumAdvanced.documentCropAsync(source) : null;
       const output = detected || await MuseumCrop.review(source);
-      if (output) MuseumAdvanced.hideQR(output);
+      if (output) await MuseumAdvanced.hideQRAsync(output);
       return output ? { blob: await blob(output), mode: '사진 종이 보정' } : null;
     } finally { URL.revokeObjectURL(url); }
   }
-  return { guide, make, blob, crop, frameSize, drawFrame, readQR, readQRAsync, qrRegions, readQRRegion, fromVideo, fromFile };
+  return { guide, make, blob, crop, frameSize, drawFrame, readQR, readQRAsync, readFastQR, readCanvasQR, qrRegions, readQRRegion, fromVideo, fromFile };
 })();
 
 

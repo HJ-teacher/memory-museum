@@ -10,12 +10,12 @@ window.MuseumCrop = (() => {
     }
     return true;
   }
-  function output(limit = 1600) {
+  function output(limit = 4096, async = false) {
     if (!valid()) return null;
     const w=(distance(points[0],points[1])+distance(points[2],points[3]))/2;
     const h=(distance(points[0],points[3])+distance(points[1],points[2]))/2;
     const scale=Math.min(1,limit/Math.max(w,h));
-    return MuseumAdvanced.warp(source,points,w*scale,h*scale);
+    return (async ? MuseumAdvanced.warpAsync : MuseumAdvanced.warp)(source,points,w*scale,h*scale);
   }
   function preview() {
     clearTimeout(previewTimer);
@@ -64,10 +64,11 @@ window.MuseumCrop = (() => {
     const old=source, next=MuseumCapture.make(old.height,old.width),ctx=next.getContext('2d');ctx.translate(next.width,0);ctx.rotate(Math.PI/2);ctx.drawImage(old,0,0);
     points=[points[3],points[0],points[1],points[2]].map(([x,y])=>[old.height-1-y,x]);source=next;showSource();draw();preview();
   };
-  $('cropSave').onclick=()=>{const result=output();if(result)finish(result);};
+  $('cropSave').onclick=async()=>{ const review=resolveReview; $('cropSave').disabled=true; const result=await output(4096,true);if(resolveReview!==review)return;if(result)finish(result);else if(resolveReview)draw(); };
   $('cropCancel').onclick=()=>finish(null);
   $('cropDialog').addEventListener('cancel',e=>{e.preventDefault();finish(null);});
   $('cropDialog').addEventListener('close',()=>{if(resolveReview)finish(null);});
   window.addEventListener('resize',()=>{if(resolveReview) { showSource(); draw(); }});
   return {review};
 })();
+

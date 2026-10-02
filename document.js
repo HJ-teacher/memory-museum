@@ -64,13 +64,46 @@ window.MuseumAdvanced = (() => {
     const distance = (a,b) => Math.hypot(a[0]-b[0],a[1]-b[1]);
     return warp(source,p,(distance(p[0],p[1])+distance(p[2],p[3]))/2,(distance(p[0],p[3])+distance(p[1],p[2]))/2);
   }
+  async function documentCropAsync(source) {
+    const points = detectPaper(source); if (!points) return null;
+    const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+    return warpAsync(source, points, (distance(points[0], points[1]) + distance(points[2], points[3])) / 2,
+      (distance(points[0], points[3]) + distance(points[1], points[2])) / 2);
+  }
+  async function warpAsync(source, points, width, height) {
+    if (!window.Worker || !window.OffscreenCanvas) return warp(source, points, width, height);
+    return new Promise(resolve => {
+      let worker;
+      try {
+        worker = new Worker('photo-worker.js?v=20261002-fast-hq');
+        worker.onmessage = event => {
+          worker.terminate(); const result = event.data;
+          if (!result) { resolve(warp(source, points, width, height)); return; }
+          const canvas = document.createElement('canvas'); canvas.width = result.width; canvas.height = result.height;
+          canvas.getContext('2d').putImageData(new ImageData(result.data, result.width, result.height), 0, 0); resolve(canvas);
+        };
+        worker.onerror = () => { worker.terminate(); resolve(warp(source, points, width, height)); };
+        const data = source.getContext('2d').getImageData(0, 0, source.width, source.height).data;
+        worker.postMessage({ data, sourceWidth: source.width, sourceHeight: source.height, points, width, height }, [data.buffer]);
+      } catch { worker?.terminate(); resolve(warp(source, points, width, height)); }
+    });
+  }
   // 단위 사각형 → 종이 사각형의 투영 변환을 역매핑하여 원근을 보정합니다.
   function warp(source, p, width, height) {
-    const scale = Math.min(1, 1600 / Math.max(width, height)), out = document.createElement('canvas');
+    const scale = Math.min(1, 4096 / Math.max(width, height)), out = document.createElement('canvas');
     out.width = Math.round(width * scale); out.height = Math.round(height * scale);
     const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = p;
     const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3, dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
     const det = dx1 * dy2 - dx2 * dy1; if (Math.abs(det) < 1e-8) return null;
+    // 기울기만 있는 사각형은 Canvas의 원본 해상도 변환으로 빠르게 처리합니다.
+    if (Math.abs(dx3) < .001 && Math.abs(dy3) < .001) {
+      const ctx = out.getContext('2d'), ax = (x1 - x0) / Math.max(1, out.width - 1), bx = (x3 - x0) / Math.max(1, out.height - 1);
+      const ay = (y1 - y0) / Math.max(1, out.width - 1), by = (y3 - y0) / Math.max(1, out.height - 1), determinant = ax * by - bx * ay;
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+      ctx.setTransform(by / determinant, -ay / determinant, -bx / determinant, ax / determinant,
+        (bx * y0 - by * x0) / determinant, (ay * x0 - ax * y0) / determinant);
+      ctx.drawImage(source, 0, 0); return out;
+    }
     const g = (dx3 * dy2 - dx2 * dy3) / det, h = (dx1 * dy3 - dx3 * dy1) / det;
     const a = x1 - x0 + g * x1, b = x3 - x0 + h * x3, d = y1 - y0 + g * y1, e = y3 - y0 + h * y3;
     const input = source.getContext('2d').getImageData(0, 0, source.width, source.height).data, ctx = out.getContext('2d'), image = ctx.createImageData(out.width, out.height);
@@ -83,13 +116,17 @@ window.MuseumAdvanced = (() => {
     }
     ctx.putImageData(image, 0, 0); return out;
   }
-  function hideQR(canvas) {
+  async function hideQRAsync(canvas) {
+    const qr = await MuseumCapture.readCanvasQR(canvas);
+    if (qr) hideQR(canvas, qr);
+  }
+  function hideQR(canvas, recognized = null) {
     // Recognition is temporary metadata. Remove recognized exhibit markers from
     // the display copy only, using the nearby paper color (including shadows).
     const ctx=canvas.getContext('2d',{willReadFrequently:true});
     for(let attempt=0;attempt<6;attempt++) {
       const image=ctx.getImageData(0,0,canvas.width,canvas.height);
-      const qr=window.jsQR?.(image.data,image.width,image.height,{inversionAttempts:'attemptBoth'});
+      const qr=recognized || window.jsQR?.(image.data,image.width,image.height,{inversionAttempts:'attemptBoth'});
       if(!qr || !/^(CLASS-EXHIBIT|EXHIBIT-\d{2})$/.test(qr.data))break;
       const pts=['topLeftCorner','topRightCorner','bottomRightCorner','bottomLeftCorner'].map(k=>qr.location[k]);
       const cx=pts.reduce((s,p)=>s+p.x,0)/4,cy=pts.reduce((s,p)=>s+p.y,0)/4;
@@ -102,6 +139,7 @@ window.MuseumAdvanced = (() => {
       }
       const color=samples.map(values=>{values.sort((a,b)=>a-b);return values.length?values[Math.floor(values.length*.6)]:255;});
       ctx.fillStyle=`rgb(${color.join(',')})`;ctx.beginPath();polygon.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.fill();
+      if (recognized) break;
     }
   }
   function settingsUI(s) {
@@ -109,5 +147,6 @@ window.MuseumAdvanced = (() => {
     document.getElementById('settingDocument').checked = s.autoDocument !== false;
   }
   function settingsValues() { return { autoDocument: document.getElementById('settingDocument').checked, hideQR: true }; }
-  return { documentCrop, detectPaper, warp, hideQR, settingsUI, settingsValues };
+  return { documentCrop, documentCropAsync, detectPaper, warp, warpAsync, hideQR, hideQRAsync, settingsUI, settingsValues };
 })();
+
