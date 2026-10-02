@@ -1,5 +1,28 @@
 /* 카메라 이미지의 중앙 영역과 미리보기 가이드는 동일한 계산을 사용합니다. */
 window.MuseumCapture = (() => {
+  let qrWorker = null, workerFailed = false;
+  let qrRequestId = 0;
+  const qrRequests = new Map();
+  function decodeAsync(canvas) {
+    const pixels = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height);
+    if (workerFailed || !window.Worker) return Promise.resolve(jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' }));
+    return new Promise(resolve => {
+      try {
+        if (!qrWorker) {
+          qrWorker = new Worker('qr-worker.js');
+          qrWorker.onmessage = event => { const pending = qrRequests.get(event.data.id); qrRequests.delete(event.data.id); pending?.(event.data.qr); };
+          qrWorker.onerror = () => { qrWorker.terminate(); qrWorker = null; workerFailed = true; for (const pending of qrRequests.values()) pending(null); qrRequests.clear(); };
+        }
+        const id = ++qrRequestId; qrRequests.set(id, resolve);
+        qrWorker.postMessage({ id, data: pixels.data, width: pixels.width, height: pixels.height }, [pixels.data.buffer]);
+      } catch { workerFailed = true; resolve(null); }
+    });
+  }
+  async function readQRAsync(video, canvas, orientation, region = null) {
+    if (region) drawQRRegion(video, canvas, region);
+    else drawFrame(video, canvas, orientation, 1280);
+    return decodeAsync(canvas);
+  }
   function guide(w, h, landscape = false) {
     const margin = 0.03;
     return { x: Math.round(w * margin), y: Math.round(h * margin), w: Math.round(w * (1 - 2 * margin)), h: Math.round(h * (1 - 2 * margin)) };
@@ -38,6 +61,33 @@ window.MuseumCapture = (() => {
     const pixels = canvas.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, canvas.width, canvas.height);
     return jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' });
   }
+  // 전체 화면을 줄이면 사라지는 작은 QR은 겹치는 원본 영역을 확대해서 읽습니다.
+  function qrRegions(video) {
+    const w = video.videoWidth, h = video.videoHeight, side = 768;
+    const columns = Math.max(1, Math.ceil((w - side) / (side - 160)) + 1);
+    const rows = Math.max(1, Math.ceil((h - side) / (side - 160)) + 1);
+    const regions = [];
+    for (let y = 0; y < rows; y++) for (let x = 0; x < columns; x++) {
+      regions.push({ x: columns === 1 ? 0 : Math.round(x * (w - side) / (columns - 1)),
+        y: rows === 1 ? 0 : Math.round(y * (h - side) / (rows - 1)), w: Math.min(side, w), h: Math.min(side, h) });
+    }
+    // 활동지 가장자리의 QR을 먼저 찾고 나머지 영역을 빠짐없이 순회합니다.
+    const priority = [0, columns - 1, (rows - 1) * columns, regions.length - 1, Math.floor(rows / 2) * columns + Math.floor(columns / 2)];
+    return [...new Set([...priority, ...regions.map((_, i) => i)])].map(i => regions[i]);
+  }
+  function drawQRRegion(video, canvas, region) {
+    canvas.width = region.w * 2; canvas.height = region.h * 2;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(video, region.x, region.y, region.w, region.h, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  }
+  function readQRRegion(video, canvas, region) {
+    drawQRRegion(video, canvas, region);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    return jsQR(pixels.data, pixels.width, pixels.height, { inversionAttempts: 'attemptBoth' });
+  }
   async function fromVideo(video, settings) {
     if (!video.videoWidth) throw new Error('not ready');
     const c = drawFrame(video, make(1, 1), settings.cameraOrientation);
@@ -66,7 +116,7 @@ window.MuseumCapture = (() => {
       return output ? { blob: await blob(output), mode: '사진 종이 보정' } : null;
     } finally { URL.revokeObjectURL(url); }
   }
-  return { guide, make, blob, crop, frameSize, drawFrame, readQR, fromVideo, fromFile };
+  return { guide, make, blob, crop, frameSize, drawFrame, readQR, readQRAsync, qrRegions, readQRRegion, fromVideo, fromFile };
 })();
 
 

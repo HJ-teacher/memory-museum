@@ -229,7 +229,7 @@ async function startCamera() {
     // 세로 작품에는 16:9보다 넓은 4:3 센서 영역을 요청합니다.
     // resizeMode:none은 브라우저의 디지털 크롭 대신 장치의 전체 영상을 우선합니다.
     const portrait = state.settings.cameraOrientation === 'portrait';
-    const media = await navigator.mediaDevices.getUserMedia({ audio: false, video: { ...cameraChoice, width: { ideal: 1920 }, height: { ideal: portrait ? 1440 : 1080 }, aspectRatio: { ideal: portrait ? 4 / 3 : 16 / 9 }, resizeMode: { ideal: 'none' } } });
+    const media = await navigator.mediaDevices.getUserMedia({ audio: false, video: { ...cameraChoice, width: { ideal: 3840 }, height: { ideal: portrait ? 2880 : 2160 }, aspectRatio: { ideal: portrait ? 4 / 3 : 16 / 9 }, resizeMode: { ideal: 'none' } } });
     if (token !== cameraRequest) { media.getTracks().forEach(t => t.stop()); return; }
     stream = media; $('video').srcObject = media; await $('video').play(); lastCameraError = '';
     $('miniVideo').srcObject = media; $('miniVideo').play().catch(() => {});
@@ -293,18 +293,33 @@ $('video').addEventListener('resize', updateGuide);
 $('miniVideo').addEventListener('loadedmetadata', updateGuide);
 let lastQRLocation = null;
 const scanCanvas = document.createElement('canvas'), scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
-let lastDetailedScan = 0;
-function scan() {
+let qrRegionIndex = 0, trackedQRRegion = null, qrRegionSize = null;
+async function scan() {
   clearTimeout(scanTimer); if (!stream) return;
+  const scanRequest = cameraRequest;
   try {
     const v = $('video');
     if (!document.hidden && v.readyState >= 2 && v.videoWidth && window.jsQR) {
-      // 방향과 무관하게 전체 영상을 읽고, 작은 QR은 원본에 가까운 해상도로 재시도합니다.
-      let qr = MuseumCapture.readQR(v, scanCanvas, state.settings.cameraOrientation, 1280);
-      if (!qr && performance.now() - lastDetailedScan >= 600 && Math.max(v.videoWidth, v.videoHeight) > 1280) {
-        lastDetailedScan = performance.now();
-        qr = MuseumCapture.readQR(v, scanCanvas, state.settings.cameraOrientation, 2560);
+      const regionSize = `${v.videoWidth}x${v.videoHeight}`;
+      if (qrRegionSize !== regionSize) { qrRegionSize = regionSize; qrRegionIndex = 0; trackedQRRegion = null; }
+      let qr = trackedQRRegion ? await MuseumCapture.readQRAsync(v, scanCanvas, state.settings.cameraOrientation, trackedQRRegion) : null;
+      if (scanRequest !== cameraRequest || !stream) return;
+      if (!qr) {
+        trackedQRRegion = null;
+        qr = await MuseumCapture.readQRAsync(v, scanCanvas, state.settings.cameraOrientation);
+        if (scanRequest !== cameraRequest || !stream) return;
       }
+      if (!qr) {
+        const regions = MuseumCapture.qrRegions(v);
+        // 두 영역씩 순회하고 찾은 영역을 추적해 작은 QR도 안정적으로 읽습니다.
+        for (let attempt = 0; attempt < Math.min(2, regions.length) && !qr; attempt++) {
+          const region = regions[qrRegionIndex++ % regions.length];
+          qr = await MuseumCapture.readQRAsync(v, scanCanvas, state.settings.cameraOrientation, region);
+          if (scanRequest !== cameraRequest || !stream) return;
+          if (qr) trackedQRRegion = region;
+        }
+      }
+      if (scanRequest !== cameraRequest || !stream) return;
       const now = performance.now(); lastQR = qr?.data || null; if (qr) { lastSeen = now; lastQRLocation = qr.location; }
       const armed = gate.observe(!!qr, now);
       if (qr && armed && state.settings.auto && !busy && !togglePending && !$('modal').open && ready) {
@@ -316,7 +331,7 @@ function scan() {
       }
     }
   } catch { status('QR을 읽기 어려워요. 조명을 조절하거나 수동 촬영을 사용해 주세요.'); }
-  scanTimer = setTimeout(scan, 160);
+  if (scanRequest === cameraRequest && stream) scanTimer = setTimeout(scan, 160);
 }
 async function capture(slot, qrText = null) {
   if (busy || !stream || slot < 0 || state.works[slot]) return;
