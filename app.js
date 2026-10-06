@@ -1,3 +1,55 @@
+document.addEventListener('DOMContentLoaded', async () => {
+  const loginScreen = document.getElementById('loginScreen');
+  const loginForm = document.getElementById('loginForm');
+  const loginMessage = document.getElementById('loginMessage');
+
+  const appParts = [
+    document.querySelector('header'),
+    document.querySelector('main'),
+    document.querySelector('footer')
+  ];
+
+  function showApp() {
+    loginScreen.hidden = true;
+    appParts.forEach(el => {
+      if (el) el.hidden = false;
+    });
+  }
+
+  function showLogin() {
+    loginScreen.hidden = false;
+    appParts.forEach(el => {
+      if (el) el.hidden = true;
+    });
+  }
+
+  const user = await getCurrentUser();
+
+  if (user) {
+    showApp();
+  } else {
+    showLogin();
+  }
+
+  loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    loginMessage.textContent = '로그인 중...';
+
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+      await signIn(email, password);
+      loginMessage.textContent = '';
+      showApp();
+      location.reload();
+    } catch (error) {
+      console.error(error);
+      loginMessage.textContent = '로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.';
+    }
+  });
+});
 /* 모든 데이터는 이 브라우저의 IndexedDB 안에서만 처리합니다. */
 'use strict';
 const $ = id => document.getElementById(id);
