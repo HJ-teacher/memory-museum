@@ -584,7 +584,7 @@ if (navigator.locks) navigator.locks.request('memory-museum-editor', { ifAvailab
 } else {
   window.museumAuthReady.then(() => init());
 }
-
+}
 window.addEventListener('pagehide', () => { stopCamera(); releaseLock?.(); });
 window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelCapture++; gate.lock(performance.now()); } else updateLiveMonitor(); });
