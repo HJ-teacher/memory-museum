@@ -14,6 +14,23 @@
   <script defer src="storage.js"></script><script defer src="qr.js?v=20261002-fast-hq"></script><script defer src="document.js?v=20261002-fast-hq"></script><script defer src="capture.js?v=20261002-fast-hq"></script><script defer src="crop.js?v=20261002-fast-hq"></script><script defer src="walk.js"></script><script defer src="app.js?v=20261002-fast-hq"></script>
 </head>
 <body data-theme="museum">
+  <div id="loginScreen" hidden>
+  <div class="login-card">
+    <h1>기억 박물관</h1>
+    <p>선생님 계정으로 로그인해 주세요.</p>
+
+    <form id="loginForm">
+      <label for="loginEmail">이메일</label>
+      <input id="loginEmail" type="email" autocomplete="username" required>
+
+      <label for="loginPassword">비밀번호</label>
+      <input id="loginPassword" type="password" autocomplete="current-password" required>
+
+      <button type="submit" class="primary wide">로그인</button>
+      <p id="loginMessage" role="status"></p>
+    </form>
+  </div>
+</div>
 <header class="topbar"><button class="brand" id="lobbyBtn" type="button" aria-label="전시관 로비로"><span class="brand-icon" aria-hidden="true">▥</span> 기억 박물관 <span class="brand-note">우리 반 작품 전시관</span></button><div class="row"><button id="helpBtn" class="quiet">? 사용 방법</button><button id="settingsBtn" class="quiet" hidden>⚙ 설정</button></div></header>
 <main>
   <section id="welcome" class="welcome">
