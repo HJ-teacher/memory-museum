@@ -1,52 +1,56 @@
-document.addEventListener('DOMContentLoaded', async () => {
-  const loginScreen = document.getElementById('loginScreen');
-  const loginForm = document.getElementById('loginForm');
-  const loginMessage = document.getElementById('loginMessage');
+window.museumAuthReady = new Promise((resolve) => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    const loginScreen = document.getElementById('loginScreen');
+    const loginForm = document.getElementById('loginForm');
+    const loginMessage = document.getElementById('loginMessage');
 
-  const appParts = [
-    document.querySelector('header'),
-    document.querySelector('main'),
-    document.querySelector('footer')
-  ];
+    const appParts = [
+      document.querySelector('header'),
+      document.querySelector('main'),
+      document.querySelector('footer')
+    ];
 
-  function showApp() {
-    loginScreen.hidden = true;
-    appParts.forEach(el => {
-      if (el) el.hidden = false;
-    });
-  }
+    function showApp() {
+      loginScreen.hidden = true;
+      appParts.forEach(el => {
+        if (el) el.hidden = false;
+      });
+    }
 
-  function showLogin() {
-    loginScreen.hidden = false;
-    appParts.forEach(el => {
-      if (el) el.hidden = true;
-    });
-  }
+    function showLogin() {
+      loginScreen.hidden = false;
+      appParts.forEach(el => {
+        if (el) el.hidden = true;
+      });
+    }
 
-  const user = await getCurrentUser();
+    const user = await getCurrentUser();
 
-  if (user) {
-    showApp();
-  } else {
-    showLogin();
-  }
-
-  loginForm.addEventListener('submit', async (event) => {
-    event.preventDefault();
-
-    loginMessage.textContent = '로그인 중...';
-
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-
-    try {
-      await signIn(email, password);
-      loginMessage.textContent = '';
+    if (user) {
       showApp();
-      location.reload();
-    } catch (error) {
-      console.error(error);
-      loginMessage.textContent = '로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.';
+      resolve(true);
+    } else {
+      showLogin();
+
+      loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        loginMessage.textContent = '로그인 중...';
+
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        try {
+          await signIn(email, password);
+          loginMessage.textContent = '';
+          showApp();
+          resolve(true);
+        } catch (error) {
+          console.error(error);
+          loginMessage.textContent =
+            '로그인에 실패했습니다. 이메일과 비밀번호를 확인해 주세요.';
+        }
+      });
     }
   });
 });
@@ -568,9 +572,19 @@ async function init() {
 }
 // 여러 탭의 오래된 상태가 서로 덮어쓰지 않도록 한 탭만 편집합니다.
 if (navigator.locks) navigator.locks.request('memory-museum-editor', { ifAvailable: true }, async lock => {
-  if (!lock) { $('setupForm').querySelector('[type=submit]').disabled = true; $('saveStatus').textContent = '다른 탭에서 전시관이 열려 있어요. 그 탭을 닫은 뒤 이 화면을 새로고침해 주세요.'; return; }
-  await init(); await new Promise(resolve => { releaseLock = resolve; });
-}); else init();
+  if (!lock) {
+    $('setupForm').querySelector('[type=submit]').disabled = true;
+    $('saveStatus').textContent = '다른 탭에서 전시관이 열려 있어요. 그 탭을 닫은 뒤 이 화면을 새로고침해 주세요.';
+    return;
+  }
+
+  await window.museumAuthReady;
+  await init();
+  await new Promise(resolve => { releaseLock = resolve; });
+} else {
+  window.museumAuthReady.then(() => init());
+}
+
 window.addEventListener('pagehide', () => { stopCamera(); releaseLock?.(); });
 window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelCapture++; gate.lock(performance.now()); } else updateLiveMonitor(); });
