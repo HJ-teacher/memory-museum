@@ -1,3 +1,6 @@
+const SUPABASE_URL = 'https://nbrnfelktphyvjwuftyz.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_sIXWB7J3YfbchA666wgNZA_LSBzqHb2';
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 /* 하나의 트랜잭션으로 설정과 작품을 함께 저장합니다.
    저장 실패 시 화면의 기존 데이터를 유지하도록 호출 측에서 먼저 await 합니다. */
 window.MuseumStore = (() => {
