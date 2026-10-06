@@ -580,11 +580,11 @@ if (navigator.locks) navigator.locks.request('memory-museum-editor', { ifAvailab
 
   await window.museumAuthReady;
   await init();
-  await new Promise(resolve => { releaseLock = resolve; });
-} else {
+   await new Promise(resolve => { releaseLock = resolve; });
+}); else {
   window.museumAuthReady.then(() => init());
 }
-}
+
 window.addEventListener('pagehide', () => { stopCamera(); releaseLock?.(); });
 window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelCapture++; gate.lock(performance.now()); } else updateLiveMonitor(); });
