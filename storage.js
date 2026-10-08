@@ -126,17 +126,18 @@ window.MuseumStore = (() => {
       0;
 
 
-    const state = {
-      id: exhibition.id,
-      version: 2,
-      settings: {
-        ...settings,
-        title: exhibition.title,
-        theme: exhibition.theme,
-        count
-      },
-      works: Array(count).fill(null)
-    };
+   const state = {
+  id: exhibition.id,
+  version: 2,
+  shareToken: exhibition.share_token,
+  settings: {
+    ...settings,
+    title: exhibition.title,
+    theme: exhibition.theme,
+    count
+  },
+  works: Array(count).fill(null)
+};
 
 
     loadedWorks.forEach(work => {
