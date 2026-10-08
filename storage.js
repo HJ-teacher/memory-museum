@@ -57,7 +57,7 @@ window.MuseumStore = (() => {
   async function room(id) {
     const user = await requireUser();
 
-    const { data: exhibition, error: exhibitionError } =
+     data: exhibition, error: exhibitionError } =
       await supabaseClient
         .from('exhibitions')
         .select('*')
@@ -74,7 +74,7 @@ window.MuseumStore = (() => {
     }
 
 
-    const { data: works, error: worksError } =
+     data: works, error: worksError } =
       await supabaseClient
         .from('works')
         .select('*')
@@ -93,7 +93,7 @@ window.MuseumStore = (() => {
     const loadedWorks = await Promise.all(
       works.map(async work => {
 
-        const { data: blob, error } =
+         data: blob, error } =
           await supabaseClient
             .storage
             .from('works')
@@ -184,7 +184,7 @@ window.MuseumStore = (() => {
       마지막 전시관 정보가 없으면
       가장 최근에 수정된 전시관을 불러옵니다.
     */
-    const { data, error } =
+     data, error } =
       await supabaseClient
         .from('exhibitions')
         .select('*')
@@ -220,18 +220,19 @@ window.MuseumStore = (() => {
     /*
       1. 전시관 기본 정보 저장
     */
-    const { error: exhibitionError } =
-      await supabaseClient
-        .from('exhibitions')
-        .upsert({
-          id: value.id,
-          owner_id: user.id,
-          title: value.settings?.title || '',
-          theme: value.settings?.theme || '',
-          settings: value.settings || {},
-          updated_at: new Date().toISOString()
-        });
-
+  const { error: exhibitionError } =
+  await supabaseClient
+    .from('exhibitions')
+    .upsert({
+      id: value.id,
+      owner_id: user.id,
+      title: value.settings?.title || '',
+      theme: value.settings?.theme || '',
+      settings: value.settings || {},
+      share_token: value.shareToken || crypto.randomUUID(),
+      updated_at: new Date().toISOString()
+    });
+    
     if (exhibitionError) {
       throw exhibitionError;
     }
