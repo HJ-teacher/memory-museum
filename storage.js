@@ -57,7 +57,7 @@ window.MuseumStore = (() => {
   async function room(id) {
     const user = await requireUser();
 
-     data: exhibition, error: exhibitionError } =
+const { data: exhibition, error: exhibitionError } =
       await supabaseClient
         .from('exhibitions')
         .select('*')
@@ -74,7 +74,7 @@ window.MuseumStore = (() => {
     }
 
 
-     data: works, error: worksError } =
+  const { data: works, error: worksError } =
       await supabaseClient
         .from('works')
         .select('*')
@@ -93,7 +93,7 @@ window.MuseumStore = (() => {
     const loadedWorks = await Promise.all(
       works.map(async work => {
 
-         data: blob, error } =
+ const { data: blob, error } =
           await supabaseClient
             .storage
             .from('works')
@@ -185,7 +185,7 @@ window.MuseumStore = (() => {
       마지막 전시관 정보가 없으면
       가장 최근에 수정된 전시관을 불러옵니다.
     */
-     data, error } =
+const { data, error } =
       await supabaseClient
         .from('exhibitions')
         .select('*')
