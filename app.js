@@ -602,6 +602,8 @@ async function initSharedExhibition() {
     const works = data.works || [];
     const count = Number(exhibition.settings?.count) || works.length || 1;
 
+    state = null;
+    
     state = {
       id: exhibition.id,
       version: 2,
@@ -654,6 +656,7 @@ async function initSharedExhibition() {
     kioskPaused = true;
 
     render();
+MuseumWalk.render(state, imageURL, editArtwork);
 
     MuseumWalk.setActive(true);
     updateLiveMonitor();
