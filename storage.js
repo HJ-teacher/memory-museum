@@ -220,7 +220,11 @@ window.MuseumStore = (() => {
     /*
       1. 전시관 기본 정보 저장
     */
-  const { error: exhibitionError } =
+if (!value.shareToken) {
+  value.shareToken = crypto.randomUUID();
+}
+
+const { error: exhibitionError } =
   await supabaseClient
     .from('exhibitions')
     .upsert({
@@ -229,7 +233,7 @@ window.MuseumStore = (() => {
       title: value.settings?.title || '',
       theme: value.settings?.theme || '',
       settings: value.settings || {},
-      share_token: value.shareToken || crypto.randomUUID(),
+      share_token: value.shareToken,
       updated_at: new Date().toISOString()
     });
     
