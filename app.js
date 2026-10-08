@@ -337,6 +337,7 @@ function fitCameraPreview(video, container, orientation) {
   return { width, height, x: (container.clientWidth - width) / 2, y: (container.clientHeight - height) / 2 };
 }
 function updateGuide() {
+  if (document.body.classList.contains('share-mode')) return;
   const orientation = state?.settings.cameraOrientation || 'landscape';
   const box = fitCameraPreview($('video'), $('videoStage'), orientation);
   fitCameraPreview($('miniVideo'), $('miniVideo').parentElement, orientation);
