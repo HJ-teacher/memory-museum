@@ -24,6 +24,19 @@ window.museumAuthReady = new Promise((resolve) => {
       });
     }
 
+    const shareToken =
+      new URLSearchParams(location.search).get('share');
+
+    /*
+      공유 링크로 들어온 방문자는
+      선생님 로그인 없이 전시관을 볼 수 있도록 합니다.
+    */
+    if (shareToken) {
+      showApp();
+      resolve(true);
+      return;
+    }
+
     const user = await getCurrentUser();
 
     if (user) {
