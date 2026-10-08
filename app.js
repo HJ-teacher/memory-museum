@@ -603,7 +603,6 @@ async function initSharedExhibition() {
     const works = data.works || [];
     const count = Number(exhibition.settings?.count) || works.length || 1;
 
-    state = null;
     
     state = {
       id: exhibition.id,
@@ -655,6 +654,9 @@ async function initSharedExhibition() {
 
     ready = true;
     kioskPaused = true;
+    
+    const modal = $('modal');
+    if (modal?.open) modal.close();
 
     render();
 MuseumWalk.render(state, imageURL, editArtwork);
