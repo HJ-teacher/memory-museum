@@ -593,61 +593,70 @@ async function initSharedExhibition() {
     );
 
     const data = await response.json();
-console.log('공유 전시 데이터:', data);
+
     if (!response.ok) {
       throw new Error(data.error || '공유 전시관을 불러오지 못했습니다.');
     }
 
+    const exhibition = data.exhibition;
+    const works = data.works || [];
+    const count = Number(exhibition.settings?.count) || works.length || 1;
+
+    state = {
+      id: exhibition.id,
+      version: 2,
+      shareToken: exhibition.share_token || shareToken,
+      settings: {
+        ...DEFAULTS,
+        ...(exhibition.settings || {}),
+        title: exhibition.title || '우리 반 기억 박물관',
+        theme: exhibition.theme || 'museum',
+        count
+      },
+      works: Array(count).fill(null)
+    };
+
+    for (const work of works) {
+      if (Number.isInteger(work.slot) && work.slot >= 0 && work.slot < count) {
+        let blob = null;
+
+        if (work.image_url) {
+          try {
+            const imageResponse = await fetch(work.image_url);
+            if (imageResponse.ok) {
+              blob = await imageResponse.blob();
+            }
+          } catch {}
+        }
+
+        state.works[work.slot] = {
+          id: work.id,
+          slot: work.slot,
+          name: work.name || '',
+          title: work.title || '',
+          description: work.description || '',
+          imagePath: work.image_path || '',
+          width: work.width || 700,
+          height: work.height || 1000,
+          blob
+        };
+      }
+    }
+
     document.body.classList.add('share-mode');
+    document.body.classList.add('inside-museum');
 
     $('welcome').hidden = true;
     $('exhibition').hidden = false;
     $('settingsBtn').hidden = true;
 
-    const exhibition = data.exhibition;
-    const works = data.works || [];
+    ready = true;
+    kioskPaused = true;
 
-    $('galleryTitle').textContent = exhibition.title || '우리 반 기억 박물관';
-    $('themeLabel').textContent = exhibition.theme || '';
+    render();
 
-    const count = exhibition.settings?.count || works.length || 1;
-
-    $('progressText').textContent = `현재 전시 작품 ${works.length} / ${count}`;
-    $('progressBar').style.width =
-      `${Math.min(100, (works.length / count) * 100)}%`;
-
-    $('gallery').replaceChildren();
-
-    for (const work of works) {
-      if (!work.image_url) continue;
-
-      const card = document.createElement('article');
-      card.className = 'frame';
-
-      const img = document.createElement('img');
-      img.src = work.image_url;
-      img.alt = work.title || `전시물 ${work.slot + 1}`;
-
-      const caption = document.createElement('div');
-      caption.className = 'frame-caption';
-
-      const title = document.createElement('strong');
-      title.textContent =
-        `전시물 ${work.slot + 1}${work.title ? ' · ' + work.title : ''}`;
-
-      const name = document.createElement('span');
-      name.textContent = work.name || '';
-
-      const description = document.createElement('p');
-      description.textContent = work.description || '';
-
-      caption.append(title, name, description);
-      card.append(img, caption);
-      $('gallery').append(card);
-    }
-
-    $('progressBar').style.width =
-      `${Math.min(100, (works.length / count) * 100)}%`;
+    MuseumWalk.setActive(true);
+    updateLiveMonitor();
 
   } catch (error) {
     console.error(error);
