@@ -584,17 +584,104 @@ async function init() {
   deviceList().catch(() => {});
 }
 // 여러 탭의 오래된 상태가 서로 덮어쓰지 않도록 한 탭만 편집합니다.
-if (navigator.locks) navigator.locks.request('memory-museum-editor', { ifAvailable: true }, async lock => {
-  if (!lock) {
-    $('setupForm').querySelector('[type=submit]').disabled = true;
-    $('saveStatus').textContent = '다른 탭에서 전시관이 열려 있어요. 그 탭을 닫은 뒤 이 화면을 새로고침해 주세요.';
-    return;
-  }
+const shareToken = new URLSearchParams(location.search).get('share');
 
-  await window.museumAuthReady;
-  await init();
-   await new Promise(resolve => { releaseLock = resolve; });
-}); else {
+async function initSharedExhibition() {
+  try {
+    const response = await fetch(
+      `https://nbrnfelktphyvjwuftyz.supabase.co/functions/v1/share-exhibition?token=${encodeURIComponent(shareToken)}`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || '공유 전시관을 불러오지 못했습니다.');
+    }
+
+    document.body.classList.add('share-mode');
+
+    $('welcome').hidden = true;
+    $('exhibition').hidden = false;
+    $('settingsBtn').hidden = true;
+
+    const exhibition = data.exhibition;
+    const works = data.works || [];
+
+    $('galleryTitle').textContent = exhibition.title || '우리 반 기억 박물관';
+    $('themeLabel').textContent = exhibition.theme || '';
+
+    const count = exhibition.settings?.count || works.length || 1;
+
+    $('progressText').textContent = `현재 전시 작품 ${works.length} / ${count}`;
+    $('progressBar').style.width =
+      `${Math.min(100, (works.length / count) * 100)}%`;
+
+    $('gallery').replaceChildren();
+
+    for (const work of works) {
+      if (!work.image_url) continue;
+
+      const card = document.createElement('article');
+      card.className = 'frame';
+
+      const img = document.createElement('img');
+      img.src = work.image_url;
+      img.alt = work.title || `전시물 ${work.slot + 1}`;
+
+      const caption = document.createElement('div');
+      caption.className = 'frame-caption';
+
+      const title = document.createElement('strong');
+      title.textContent =
+        `전시물 ${work.slot + 1}${work.title ? ' · ' + work.title : ''}`;
+
+      const name = document.createElement('span');
+      name.textContent = work.name || '';
+
+      const description = document.createElement('p');
+      description.textContent = work.description || '';
+
+      caption.append(title, name, description);
+      card.append(img, caption);
+      $('gallery').append(card);
+    }
+
+    $('progressBar').style.width =
+      `${Math.min(100, (works.length / count) * 100)}%`;
+
+  } catch (error) {
+    console.error(error);
+
+    $('welcome').hidden = true;
+    $('exhibition').hidden = false;
+    $('galleryTitle').textContent = '전시관을 불러오지 못했어요.';
+    $('galleryHint').textContent =
+      error.message || '공유 링크를 확인해 주세요.';
+  }
+}
+
+if (shareToken) {
+  window.museumAuthReady.then(() => initSharedExhibition());
+} else if (navigator.locks) {
+  navigator.locks.request(
+    'memory-museum-editor',
+    { ifAvailable: true },
+    async lock => {
+      if (!lock) {
+        $('setupForm').querySelector('[type=submit]').disabled = true;
+        $('saveStatus').textContent =
+          '다른 탭에서 전시관이 열려 있어요. 그 탭을 닫은 뒤 이 화면을 새로고침해 주세요.';
+        return;
+      }
+
+      await window.museumAuthReady;
+      await init();
+      await new Promise(resolve => {
+        releaseLock = resolve;
+      });
+    }
+  );
+} else {
   window.museumAuthReady.then(() => init());
 }
 
