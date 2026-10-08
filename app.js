@@ -593,7 +593,7 @@ async function initSharedExhibition() {
     );
 
     const data = await response.json();
-
+console.log('공유 전시 데이터:', data);
     if (!response.ok) {
       throw new Error(data.error || '공유 전시관을 불러오지 못했습니다.');
     }
