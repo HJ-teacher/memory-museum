@@ -631,6 +631,64 @@ $('qrBtn').onclick = () => {
   };
   build();
 };
+$('shareBtn').onclick = () => {
+  if (!state?.id || !state?.shareToken) {
+    toast('먼저 전시관을 저장해 주세요.');
+    return;
+  }
+
+  const shareUrl =
+    `${location.origin}${location.pathname}?share=${encodeURIComponent(state.shareToken)}`;
+
+  openModal(
+    '전시관 공유',
+    `<p>아래 링크를 다른 사람에게 보내면 이 전시관을 공유할 수 있어요.</p>
+     <input id="shareUrlInput" type="text" readonly>
+     <div class="row">
+       <button id="copyShareUrl" class="primary">링크 복사</button>
+       <button id="makeShareQR">공유용 QR 만들기</button>
+     </div>
+     <p class="small">공유용 QR을 스캔하면 전시관 링크로 이동합니다.</p>`
+  );
+
+  $('shareUrlInput').value = shareUrl;
+
+  $('copyShareUrl').onclick = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast('전시관 공유 링크를 복사했어요.');
+    } catch {
+      $('shareUrlInput').select();
+      document.execCommand('copy');
+      toast('전시관 공유 링크를 복사했어요.');
+    }
+  };
+
+  $('makeShareQR').onclick = () => {
+    const canvas = MuseumQR.canvas(shareUrl);
+    const qrImage = canvas.toDataURL('image/png');
+
+    openModal(
+      '공유용 QR',
+      `<p>이 QR을 스캔하면 이 전시관으로 이동합니다.</p>
+       <div class="qr-item">
+         <img src="${qrImage}" alt="전시관 공유용 QR">
+         <button id="saveShareQR" class="primary">QR 이미지 저장</button>
+       </div>`
+    );
+
+    $('saveShareQR').onclick = async () => {
+      try {
+        const blob = await new Promise((resolve, reject) =>
+          canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG')), 'image/png')
+        );
+        download(blob, '전시관-공유-QR.png');
+      } catch {
+        toast('QR 이미지를 저장하지 못했어요. 다시 시도해 주세요.');
+      }
+    };
+  };
+};
 $('exportBtn').onclick = async () => {
   if (busy) { toast('작품 등록이 끝난 뒤 저장해 주세요.'); return; }
   busy = true; $('exportBtn').disabled = true;
